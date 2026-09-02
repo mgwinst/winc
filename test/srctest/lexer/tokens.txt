@@ -1,6 +1,6 @@
-x var1 42
+x var1 42 3.33 0x00 0xf3 "hello"
 fn struct if else while for return break continue const true false inline
-= + - * / % < > ( ) { } [ ] & " ' ; : , . ! | ^
+= + - * / % < > ( ) { } [ ] & ; : , . ! | ^
 == != += -= *= /= %= <= >= ++ -- << >> && || -> //
 int int8 int16 int32 int64
 uint uint8 uint16 uint32 uint64

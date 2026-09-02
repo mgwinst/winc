@@ -2,14 +2,14 @@
 
 #include <unordered_map>
 #include <unordered_set>
-#include <format>
 #include <string_view>
 
 enum class TokenType
 {
     IDENTIFIER = 128,
-    NUMERIC_LITERAL,
-    CHAR_LITERAL,
+    INT_LITERAL,
+    FLOAT_LITERAL,
+    HEX_LITERAL,
     STRING_LITERAL,
     TYPE,
     KEYWORD_FUNCTION,
@@ -75,14 +75,13 @@ enum class TokenType
 
 inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
 {
-    switch (type)
-    {
+    switch (type) {
         case TokenType::IDENTIFIER:            return "IDENTIFIER";
-        case TokenType::NUMERIC_LITERAL:       return "NUMERIC_LITERAL";
-        case TokenType::CHAR_LITERAL:          return "CHAR_LITERAL";
+        case TokenType::INT_LITERAL:           return "INT LITERAL";
+        case TokenType::FLOAT_LITERAL:         return "FLOAT LITERAL";
+        case TokenType::HEX_LITERAL:           return "HEX LITERAL";
         case TokenType::STRING_LITERAL:        return "STRING_LITERAL";
         case TokenType::TYPE:                  return "TYPE";
-
         case TokenType::KEYWORD_FUNCTION:      return "KEYWORD_FUNCTION";
         case TokenType::KEYWORD_STRUCT:        return "KEYWORD_STRUCT";
         case TokenType::KEYWORD_VAR:           return "KEYWORD_VAR";
@@ -97,14 +96,12 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::KEYWORD_TRUE:          return "KEYWORD_TRUE";
         case TokenType::KEYWORD_FALSE:         return "KEYWORD_FALSE";
         case TokenType::KEYWORD_INLINE:        return "KEYWORD_INLINE";
-
         case TokenType::LPAREN:                return "LPAREN";
         case TokenType::RPAREN:                return "RPAREN";
         case TokenType::LBRACKET:              return "LBRACKET";
         case TokenType::RBRACKET:              return "RBRACKET";
         case TokenType::LBRACE:                return "LBRACE";
         case TokenType::RBRACE:                return "RBRACE";
-
         case TokenType::EQUAL:                 return "EQUAL";
         case TokenType::PLUS:                  return "PLUS";
         case TokenType::MINUS:                 return "MINUS";
@@ -125,7 +122,6 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::PIPE:                  return "PIPE";
         case TokenType::ARROW:                 return "ARROW";
         case TokenType::TILDE:                 return "TILDE";
-
         case TokenType::EQUAL_EQUAL:           return "EQUAL_EQUAL";
         case TokenType::BANG_EQUAL:            return "BANG_EQUAL";
         case TokenType::PLUS_EQUAL:            return "PLUS_EQUAL";
@@ -143,7 +139,6 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::AMPERSAND_AMPERSAND:   return "AMPERSAND_AMPERSAND";
         case TokenType::PIPE_PIPE:             return "PIPE_PIPE";
         case TokenType::SLASH_SLASH:           return "SLASH_SLASH";
-
         case TokenType::END_OF_FILE:           return "END_OF_FILE";
         case TokenType::INVALID:               return "INVALID";
     }
@@ -191,8 +186,6 @@ inline const std::unordered_map<char, TokenType> single_symbol_map {
     {'[',  TokenType::LBRACKET},
     {']',  TokenType::RBRACKET},
     {'&',  TokenType::AMPERSAND},
-    {'"',  TokenType::DOUBLE_QUOTE},
-    {'\'', TokenType::SINGLE_QUOTE},
     {';',  TokenType::SEMICOLON},
     {':',  TokenType::COLON},
     {',',  TokenType::COMMA},
@@ -229,26 +222,10 @@ struct Token {
     std::string_view lexeme_, source_line_;
     std::size_t line_number_, column_number_, length_;
 
-    Token(TokenType type, std::string_view lexeme, std::string_view source_line, std::size_t line_number, std::size_t column_number, std::size_t length) noexcept:
-        type_{type},
-        lexeme_{lexeme},
-        source_line_{source_line},
-        line_number_{line_number},
-        column_number_{column_number},
-        length_{length} {}
-
-    Token(TokenType type, std::string_view lexeme) noexcept:
-        type_{type},
-        lexeme_{lexeme},
-        line_number_{0},
-        column_number_{0},
-        length_{0} {}
-
+    Token(TokenType type, std::string_view lexeme, std::string_view source_line, std::size_t line_number, std::size_t column_number, std::size_t length) noexcept;
+    Token(TokenType type, std::string_view lexeme) noexcept;
     Token() = default;
     ~Token() = default;
 
-    std::string to_string() const noexcept
-    {
-        return std::format("[{}] {}:{} {} ", token_type_to_string(type_), line_number_, column_number_, lexeme_);
-    }
+    std::string to_string() const noexcept;
 };

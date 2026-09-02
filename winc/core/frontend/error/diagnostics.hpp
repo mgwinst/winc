@@ -13,7 +13,7 @@ struct Diagnostics
     void register_error(std::string msg, Source source);
     void register_warning(const Warning& warning);
     void register_warning(std::string msg, Source source);
-    void report() const;
+    void report();
 
     void dump_errors() const;
     void dump_warnings() const;

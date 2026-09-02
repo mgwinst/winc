@@ -52,7 +52,7 @@ void Diagnostics::dump_warnings() const
 bool Diagnostics::contains_errors() const { return errors_.size() > 0; }
 bool Diagnostics::contains_warnings() const { return warnings_.size() > 0; }
 
-void Diagnostics::report() const
+void Diagnostics::report()
 {
     if (contains_warnings()) {
         dump_warnings();
@@ -62,6 +62,9 @@ void Diagnostics::report() const
         dump_errors();
         exit(1);
     }
+
+    errors_.clear();
+    warnings_.clear();
 }
 
 // since diagnostics is unique to translation_unit -> add flush mechanism for warnings

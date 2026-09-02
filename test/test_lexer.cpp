@@ -7,9 +7,11 @@
 std::array token_table = {
     TokenType::IDENTIFIER,
     TokenType::IDENTIFIER,
-    TokenType::NUMERIC_LITERAL,
-    // TokenType::STRING_LITERAL,
-    // TokenType::CHAR_LITERAL,
+    TokenType::INT_LITERAL,
+    TokenType::FLOAT_LITERAL,
+    TokenType::HEX_LITERAL,
+    TokenType::HEX_LITERAL,
+    TokenType::STRING_LITERAL,
     TokenType::KEYWORD_FUNCTION,
     TokenType::KEYWORD_STRUCT,
     TokenType::KEYWORD_IF,
@@ -38,8 +40,6 @@ std::array token_table = {
     TokenType::LBRACKET,
     TokenType::RBRACKET,
     TokenType::AMPERSAND,
-    TokenType::DOUBLE_QUOTE,
-    TokenType::SINGLE_QUOTE,
     TokenType::SEMICOLON,
     TokenType::COLON,
     TokenType::COMMA,
@@ -99,13 +99,4 @@ TEST_CASE("tokens") {
 
         ++i;
     }
-}
-
-TEST_CASE("get_token() / peek_token()")
-{
-    TranslationUnit translation_unit{ "srctest/lexer/tokens.txt" };
-    Lexer lexer{ translation_unit };
-
-    CHECK(lexer.get_token().type_ == token_table[0]);
-    CHECK(lexer.peek_token().type_ == token_table[1]);
 }

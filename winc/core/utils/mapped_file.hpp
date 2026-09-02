@@ -24,7 +24,8 @@ public:
         struct stat sb;
         if (fstat(fd, &sb) == -1) {
             close(fd);
-            fatal_error("fstat() failed to retrieve file descriptor size");
+            std::println(stderr, "fstat() failed to retrieve file descriptor size");
+            exit(1);
         }
 
         if (sb.st_size <= 0) {
@@ -60,7 +61,7 @@ public:
 
     std::span<const char> data() const
     {
-        return {static_cast<const char*>(buffer_), size_};
+        return std::span{static_cast<const char*>(buffer_), size_};
     }
 
 private:

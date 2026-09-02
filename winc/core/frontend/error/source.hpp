@@ -2,6 +2,7 @@
 
 #include <string_view>
 #include <cstdint>
+#include <format>
 
 #include "frontend/lexer/token.hpp"
 
