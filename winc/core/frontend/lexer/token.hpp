@@ -40,7 +40,6 @@ enum class TokenType
     PERCENT,
     LESS,
     GREATER,
-    SINGLE_QUOTE,
     DOUBLE_QUOTE,
     AMPERSAND,
     BANG,
@@ -68,7 +67,6 @@ enum class TokenType
     STAR_STAR,
     AMPERSAND_AMPERSAND,
     PIPE_PIPE,
-    SLASH_SLASH,
     END_OF_FILE,
     INVALID,
 };
@@ -110,7 +108,6 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::PERCENT:               return "PERCENT";
         case TokenType::LESS:                  return "LESS";
         case TokenType::GREATER:               return "GREATER";
-        case TokenType::SINGLE_QUOTE:          return "SINGLE_QUOTE";
         case TokenType::DOUBLE_QUOTE:          return "DOUBLE_QUOTE";
         case TokenType::AMPERSAND:             return "AMPERSAND";
         case TokenType::BANG:                  return "BANG";
@@ -138,7 +135,6 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::STAR_STAR:             return "STAR_STAR";
         case TokenType::AMPERSAND_AMPERSAND:   return "AMPERSAND_AMPERSAND";
         case TokenType::PIPE_PIPE:             return "PIPE_PIPE";
-        case TokenType::SLASH_SLASH:           return "SLASH_SLASH";
         case TokenType::END_OF_FILE:           return "END_OF_FILE";
         case TokenType::INVALID:               return "INVALID";
     }
@@ -150,7 +146,7 @@ inline const std::unordered_set<std::string_view> built_in_types {
     "int", "int8", "int16", "int32", "int64",
     "uint", "uint8", "uint16", "uint32", "uint64",
     "float", "float16", "float32", "float64",
-    "char", "byte", "bool", "void"
+    "str", "byte", "bool", "void"
 };
 
 inline const std::unordered_map<std::string_view, TokenType> keywords {
@@ -214,7 +210,6 @@ inline const std::unordered_map<std::string_view, TokenType> double_symbol_map {
     {"&&", TokenType::AMPERSAND_AMPERSAND},
     {"||", TokenType::PIPE_PIPE},
     {"->", TokenType::ARROW},
-    {"//", TokenType::SLASH_SLASH},
 };
 
 struct Token {

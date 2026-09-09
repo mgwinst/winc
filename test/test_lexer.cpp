@@ -3,14 +3,19 @@
 #include <array>
 
 #include "frontend/lexer/lexer.hpp"
+#include "frontend/lexer/token.hpp"
 
 std::array token_table = {
     TokenType::IDENTIFIER,
     TokenType::IDENTIFIER,
+    TokenType::IDENTIFIER,
     TokenType::INT_LITERAL,
+    TokenType::INT_LITERAL,
+    TokenType::FLOAT_LITERAL,
     TokenType::FLOAT_LITERAL,
     TokenType::HEX_LITERAL,
     TokenType::HEX_LITERAL,
+    TokenType::STRING_LITERAL,
     TokenType::STRING_LITERAL,
     TokenType::KEYWORD_FUNCTION,
     TokenType::KEYWORD_STRUCT,
@@ -63,7 +68,6 @@ std::array token_table = {
     TokenType::AMPERSAND_AMPERSAND,
     TokenType::PIPE_PIPE,
     TokenType::ARROW,
-    TokenType::SLASH_SLASH,
     TokenType::TYPE,
     TokenType::TYPE,
     TokenType::TYPE,
@@ -89,14 +93,43 @@ TEST_CASE("tokens") {
 
     int i = 0;
     while (true) {
-        Token tok = lexer.get_token();
-        if (tok.type_ == TokenType::END_OF_FILE)
+        Token token = lexer.lex_token();
+        if (token.type_ == TokenType::END_OF_FILE) {
             break;
+        }
 
-        INFO(std::format("{} != {}", token_type_to_string(tok.type_), token_type_to_string(token_table[i])));
+        INFO(std::format("{} != {}", token_type_to_string(token.type_), token_type_to_string(token_table[i])));
 
-        CHECK(tok.type_ == token_table[i]);
+        CHECK(token.type_ == token_table[i]);
 
         ++i;
     }
+}
+
+TEST_CASE("comment")
+{
+    TranslationUnit translation_unit{ "srctest/lexer/comment.txt" };
+    Lexer lexer{ translation_unit };
+
+    std::vector<Token> tokens;
+
+    while (true) {
+        Token token = lexer.lex_token();
+
+        if (token.type_ == TokenType::END_OF_FILE) {
+            break;
+        }
+
+        tokens.push_back(token);
+    }
+
+    REQUIRE(tokens.size() == 3);
+    REQUIRE(tokens[0].type_ == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].type_ == TokenType::EQUAL);
+    REQUIRE(tokens[2].type_ == TokenType::INT_LITERAL);
+}
+
+TEST_CASE("unterminated string literal")
+{
+
 }

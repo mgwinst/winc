@@ -7,42 +7,44 @@
 template <typename T>
 concept Numeric = std::is_arithmetic_v<T>;
 
-template <Numeric T>
+template <std::integral T>
 std::optional<T> sv_to_numeric(std::string_view str)
 {
-    if (str.empty())
+    if (str.empty()) {
         return std::nullopt;
+    }
 
     T value = 0;
-    auto [ptr, ec] = std::from_chars(str.begin(), str.end(), value);
 
-    if (ec == std::errc{} && ptr == str.end())
+    auto offset = 0;
+    auto base = 10;
+
+    if (str.size() > 2 && std::tolower(str[1]) == 'x') {
+        offset = 2;
+        base = 16;
+    }
+
+    auto [ptr, ec] = std::from_chars(str.begin() + offset, str.end(), value, base);
+    if (ec == std::errc{} && ptr == str.end()) {
         return value;
+    }
 
     return std::nullopt;
 }
 
-inline std::string_view trim(const char* start, const char* end)
+template <std::floating_point T>
+std::optional<T> sv_to_numeric(std::string_view str)
 {
-    std::string_view sv{start, end};
-    constexpr auto ws = " \t\n\r\f\v";
+    if (str.empty()) {
+        return std::nullopt;
+    }
 
-    auto b = sv.find_first_not_of(ws);
-    if (b == std::string_view::npos)
-        return {};
+    T value = 0;
 
-    auto e = sv.find_last_not_of(ws);
-    return sv.substr(b, e - b + 1);
-}
+    auto [ptr, ec] = std::from_chars(str.begin(), str.end(), value);
+    if (ec == std::errc{} && ptr == str.end()) {
+        return value;
+    }
 
-inline std::string_view trim(std::string_view sv)
-{
-    constexpr auto ws = " \t\n\r\f\v";
-
-    auto b = sv.find_first_not_of(ws);
-    if (b == std::string_view::npos)
-        return {};
-
-    auto e = sv.find_last_not_of(ws);
-    return sv.substr(b, e - b + 1);
+    return std::nullopt;
 }

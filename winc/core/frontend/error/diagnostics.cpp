@@ -66,5 +66,3 @@ void Diagnostics::report()
     errors_.clear();
     warnings_.clear();
 }
-
-// since diagnostics is unique to translation_unit -> add flush mechanism for warnings

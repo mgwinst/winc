@@ -12,7 +12,7 @@ public:
     void run(std::string_view input_file, const CompileOptions& options);
 
 private:
-    // AST parse(TranslationUnit& translation_unit);
+    AST parse(TranslationUnit& translation_unit);
     // SemaTree analyze(ModuleContext& ctx, AST& ast);
     // Program lower(ModuleContext& ctx, const SemaTree& tree);
     // void optimize(Program& program);

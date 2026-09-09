@@ -1,5 +1,4 @@
-#include "frontend/translation_unit.hpp"
-#include "test/test_utils.hpp"
+#include "test_utils.hpp"
 
 // functions
 
@@ -59,8 +58,7 @@ TEST_CASE("missing 'fn' keyword")
 TEST_CASE("missing return type")
 {
     TranslationUnit translation_unit{ "srctest/parser/func_missing_ret_type.w" };
-    Parser parser{translation_unit};
-    AST ast = parser.run();
+    auto ast = Parser{translation_unit}.run();
 
     REQUIRE(translation_unit.diagnostics_.contains_errors());
     CHECK(translation_unit.diagnostics_.errors_[0].msg_.contains("syntax error: function missing trailing return type"));
@@ -73,6 +71,7 @@ TEST_CASE("variable declaration")
     auto ast = parse("srctest/parser/var_decl.w");
 
     auto* translation_unit = cast<TranslationUnitDecl>(ast.root_);
+    REQUIRE(translation_unit->decls_.empty() == false);
     auto* func = cast<FuncDecl>(translation_unit->decls_[0]);
     auto* body = cast<CompoundStmt>(func->body_);
 

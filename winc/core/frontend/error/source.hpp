@@ -8,22 +8,22 @@
 
 struct Source
 {
-    uint64_t line_number_, column_number_;
     std::string_view item_, source_line_;
+    uint64_t line_number_, column_number_;
 
     Source() = default;
 
     Source(const Token& start, const Token& end) :
-        line_number_{ start.line_number_ },
-        column_number_{ start.column_number_ },
         item_{start.lexeme_.data(), end.lexeme_.data() + end.length_},
-        source_line_{ start.source_line_ } {}
+        source_line_{ start.source_line_ },
+        line_number_{ start.line_number_ },
+        column_number_{ start.column_number_ } {}
 
     Source(const Token& token) :
-        line_number_{ token.line_number_ },
-        column_number_{ token.column_number_ },
         item_{ token.lexeme_ },
-        source_line_{ token.source_line_ } {}
+        source_line_{ token.source_line_ },
+        line_number_{ token.line_number_ },
+        column_number_{ token.column_number_ } {}
 };
 
 inline std::string format_source(const Source source)

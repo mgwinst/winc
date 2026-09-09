@@ -9,7 +9,5 @@
 inline AST parse(std::string_view file_path)
 {
     TranslationUnit translation_unit{ file_path };
-    Parser parser{translation_unit};
-    AST ast = parser.run();
-    return ast;
+    return Parser{translation_unit}.run();
 }

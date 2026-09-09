@@ -1,8 +1,8 @@
-x var1 42 3.33 0x00 0xf3 "hello"
+x x1 _x 2 42 3. 3.33 0x00 0xf3 "hello" "a"
 fn struct if else while for return break continue const true false inline
 = + - * / % < > ( ) { } [ ] & ; : , . ! | ^
-== != += -= *= /= %= <= >= ++ -- << >> && || -> //
+== != += -= *= /= %= <= >= ++ -- << >> && || ->
 int int8 int16 int32 int64
 uint uint8 uint16 uint32 uint64
 float float16 float32 float64
-char bool void
+str bool void

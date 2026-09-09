@@ -14,7 +14,7 @@ add_library(winc_lib STATIC
     winc/core/frontend/error/diagnostics.cpp
     winc/core/frontend/lexer/lexer.cpp
     winc/core/frontend/lexer/token.cpp
-    #winc/core/frontend/parser/parser.cpp
+    winc/core/frontend/parser/parser.cpp
 )
 
 target_include_directories(winc_lib PUBLIC

@@ -39,7 +39,6 @@ enum class ASTNodeKind : uint8_t
     ArraySubscriptExpr,
     InitListExpr,
     ExplicitCastExpr,
-    // ImplicitCastExpr,
 
     QualifierTypeExpr,
     PointerTypeExpr,
