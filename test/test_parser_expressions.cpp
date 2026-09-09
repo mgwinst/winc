@@ -1,3 +1,4 @@
+#include "frontend/ast/ast.hpp"
 #include "test/test_utils.hpp"
 
 // Unary Ops
@@ -103,6 +104,11 @@ TEST_CASE("a + b")
 
 TEST_CASE("function call no arguments")
 {
+
+}
+
+TEST_CASE("function call with 2 arguments")
+{
     auto ast = parse("srctest/parser/call.w");
 
     auto* translation_unit = cast<TranslationUnitDecl>(ast.root_);
@@ -162,6 +168,32 @@ TEST_CASE("array subscript")
 
     CHECK(isa<ReferenceExpr>(arr_sub_expr->base_));
     CHECK(isa<ReferenceExpr>(arr_sub_expr->index_));
+}
+
+TEST_CASE("new")
+{
+    auto ast = parse("srctest/parser/new.w");
+
+    auto* translation_unit = cast<TranslationUnitDecl>(ast.root_);
+    auto* func = cast<FuncDecl>(translation_unit->decls_[0]);
+    auto* body = cast<CompoundStmt>(func->body_);
+
+    auto* new_expr = cast<NewExpr>(body->children_[0]);
+
+    CHECK(isa<CallExpr>(new_expr->constructor_));
+}
+
+TEST_CASE("delete")
+{
+    auto ast = parse("srctest/parser/delete.w");
+
+    auto* translation_unit = cast<TranslationUnitDecl>(ast.root_);
+    auto* func = cast<FuncDecl>(translation_unit->decls_[0]);
+    auto* body = cast<CompoundStmt>(func->body_);
+
+    auto* delete_expr = cast<DeleteExpr>(body->children_[0]);
+
+    CHECK(isa<ReferenceExpr>(delete_expr->pointer_));
 }
 
 // literals, int, float, char, string, byte(hex)

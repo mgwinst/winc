@@ -4,11 +4,9 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <format>
 #include <span>
 #include <string_view>
-
-#include "utils/fatal.hpp"
+#include <print>
 
 class MappedFile
 {

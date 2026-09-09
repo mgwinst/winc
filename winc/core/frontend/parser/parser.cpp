@@ -631,6 +631,20 @@ std::expected<Expr*, Error> Parser::nud(const Token token) noexcept
             return expr;
         }
 
+        case TokenType::KEYWORD_NEW: {
+            auto expr = parse_expr();
+            if (!expr) return std::unexpected{ expr.error() };
+
+            return ast_.emplace<NewExpr>(*expr);
+        }
+
+        case TokenType::KEYWORD_DELETE: {
+            auto expr = parse_expr();
+            if (!expr) return std::unexpected{ expr.error() };
+
+            return ast_.emplace<DeleteExpr>(*expr);
+        }
+
         default:
             return std::unexpected{ SyntaxError{token, "unexpected symbol in expression"} };
     }

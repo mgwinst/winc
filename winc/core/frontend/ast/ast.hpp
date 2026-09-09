@@ -39,6 +39,8 @@ enum class ASTNodeKind : uint8_t
     ArraySubscriptExpr,
     InitListExpr,
     ExplicitCastExpr,
+    NewExpr,
+    DeleteExpr,
 
     QualifierTypeExpr,
     PointerTypeExpr,
@@ -330,10 +332,22 @@ struct InitListExpr : Expr
         init_values_{ std::move(init_values) } {}
 };
 
-struct ExplicitCastExpr : Expr
+struct NewExpr : Expr
 {
-    ExplicitCastExpr() :
-        Expr(ASTNodeKind::ExplicitCastExpr) {}
+    ASTNode* constructor_;
+
+    NewExpr(ASTNode* constructor, Source source = {}) :
+        Expr(ASTNodeKind::NewExpr, source),
+        constructor_{ constructor } {}
+};
+
+struct DeleteExpr : Expr
+{
+    ASTNode* pointer_;
+
+    DeleteExpr(ASTNode* pointer, Source source = {}) :
+        Expr(ASTNodeKind::DeleteExpr, source),
+        pointer_{ pointer } {}
 };
 
 struct QualifierTypeExpr : TypeExpr
@@ -406,6 +420,8 @@ template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::MemberExpr>    
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ArraySubscriptExpr>  = ASTNodeKind::ArraySubscriptExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::InitListExpr>        = ASTNodeKind::InitListExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ExplicitCastExpr>    = ASTNodeKind::ExplicitCastExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::NewExpr>             = ASTNodeKind::NewExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::DeleteExpr>          = ASTNodeKind::DeleteExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::QualifierTypeExpr>   = ASTNodeKind::QualifierTypeExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::PointerTypeExpr>     = ASTNodeKind::PointerTypeExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ArrayTypeExpr>       = ASTNodeKind::ArrayTypeExpr;
