@@ -281,19 +281,46 @@ std::expected<Decl*, Error> Parser::parse_struct_def() noexcept
 
     EXPECT_LBRACE();
 
+    std::vector<ASTNode*> member_functions;
     std::vector<ASTNode*> fields;
 
     while (!is_cur_token(TokenType::RBRACE)) {
-        auto field = parse_field();
+        if (is_cur_token(TokenType::KEYWORD_FUNCTION)) {
+            eat_token();
 
-        if (!field) return std::unexpected{ field.error() };
+            auto member_func = parse_member_function();
+            if (!member_func) return std::unexpected{ member_func.error() };
 
-        fields.push_back(*field);
+            member_functions.push_back(*member_func);
+        } else {
+            auto field = parse_field();
+            if (!field) return std::unexpected{ field.error() };
+
+            fields.push_back(*field);
+        }
     }
 
     EXPECT_RBRACE();
 
-    return ast_.emplace<RecordDecl>(RecordKind::Struct, std::string{ *name }, std::move(fields), source);
+    return ast_.emplace<RecordDecl>(RecordKind::Struct, std::string{ *name }, std::move(member_functions), std::move(fields), source);
+}
+
+std::expected<Decl*, Error> Parser::parse_member_function() noexcept
+{
+    auto is_dtor = false;
+    if (is_cur_token(TokenType::TILDE)) {
+        is_dtor = true;
+        eat_token();
+    }
+
+    auto func = parse_func_decl();
+    if (!func) return std::unexpected{ func.error() };
+
+    if (is_dtor) {
+        (*func)->name_.insert(0, "~");
+    }
+
+    return func;
 }
 
 std::expected<Decl*, Error> Parser::parse_field() noexcept

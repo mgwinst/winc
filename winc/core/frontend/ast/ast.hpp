@@ -38,7 +38,6 @@ enum class ASTNodeKind : uint8_t
     MemberExpr,
     ArraySubscriptExpr,
     InitListExpr,
-    ExplicitCastExpr,
     NewExpr,
     DeleteExpr,
 
@@ -132,11 +131,13 @@ struct FuncDecl : Decl
 struct RecordDecl : Decl
 {
     RecordKind kind_;
+    std::vector<ASTNode*> member_functions_;
     std::vector<ASTNode*> fields_;
 
-    RecordDecl(RecordKind kind, std::string name, std::vector<ASTNode*> fields, Source source = {}) :
+    RecordDecl(RecordKind kind, std::string name, std::vector<ASTNode*> member_functions, std::vector<ASTNode*> fields, Source source = {}) :
         Decl{ASTNodeKind::RecordDecl, std::move(name), source},
         kind_{ kind },
+        member_functions_{ std::move(member_functions) },
         fields_{ std::move(fields) } {}
 };
 
@@ -419,7 +420,6 @@ template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::CallExpr>      
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::MemberExpr>          = ASTNodeKind::MemberExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ArraySubscriptExpr>  = ASTNodeKind::ArraySubscriptExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::InitListExpr>        = ASTNodeKind::InitListExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ExplicitCastExpr>    = ASTNodeKind::ExplicitCastExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::NewExpr>             = ASTNodeKind::NewExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::DeleteExpr>          = ASTNodeKind::DeleteExpr;
 template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::QualifierTypeExpr>   = ASTNodeKind::QualifierTypeExpr;

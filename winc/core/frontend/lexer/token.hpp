@@ -28,6 +28,7 @@ enum class TokenType
     KEYWORD_INLINE,
     KEYWORD_NEW,
     KEYWORD_DELETE,
+    KEYWORD_SELF,
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -98,6 +99,7 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::KEYWORD_INLINE:        return "KEYWORD_INLINE";
         case TokenType::KEYWORD_NEW:           return "KEYWORD_NEW";
         case TokenType::KEYWORD_DELETE:        return "KEYWORD_DELETE";
+        case TokenType::KEYWORD_SELF:          return "KEYWORD_SELF";
         case TokenType::LPAREN:                return "LPAREN";
         case TokenType::RPAREN:                return "RPAREN";
         case TokenType::LBRACKET:              return "LBRACKET";
@@ -170,6 +172,7 @@ inline const std::unordered_map<std::string_view, TokenType> keywords {
     {"inline",   TokenType::KEYWORD_INLINE},
     {"new",      TokenType::KEYWORD_NEW},
     {"delete",   TokenType::KEYWORD_DELETE},
+    {"self",     TokenType::KEYWORD_SELF},
 };
 
 inline const std::unordered_map<char, TokenType> single_symbol_map {

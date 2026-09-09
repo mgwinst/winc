@@ -44,6 +44,7 @@ struct Parser
     std::expected<Decl*, Error> parse_param_decl() noexcept;
     std::expected<Decl*, Error> parse_func_decl() noexcept;
     std::expected<Decl*, Error> parse_struct_def() noexcept;
+    std::expected<Decl*, Error> parse_member_function() noexcept;
     std::expected<Decl*, Error> parse_field() noexcept;
     std::expected<Stmt*, Error> parse_return_stmt() noexcept;
     std::expected<Stmt*, Error> parse_compound_stmt() noexcept;

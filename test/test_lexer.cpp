@@ -32,6 +32,7 @@ std::array token_table = {
     TokenType::KEYWORD_INLINE,
     TokenType::KEYWORD_NEW,
     TokenType::KEYWORD_DELETE,
+    TokenType::KEYWORD_SELF,
     TokenType::EQUAL,
     TokenType::PLUS,
     TokenType::MINUS,
