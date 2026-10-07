@@ -8,6 +8,6 @@
 
 inline AST parse(std::string_view file_path)
 {
-    TranslationUnit translation_unit{ file_path };
+    TranslationUnit translation_unit{file_path};
     return Parser{translation_unit}.run();
 }

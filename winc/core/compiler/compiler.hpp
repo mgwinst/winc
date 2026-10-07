@@ -13,7 +13,7 @@ public:
 
 private:
     AST parse(TranslationUnit& translation_unit);
-    // SemaTree analyze(ModuleContext& ctx, AST& ast);
-    // Program lower(ModuleContext& ctx, const SemaTree& tree);
-    // void optimize(Program& program);
+    void analyze(TranslationUnit& translation_unit, AST& ast);
+    // IRProgram lower(TranslationUnit& translation_unit, AST& ast);
+    // void optimize(IRProgram& program);
 };

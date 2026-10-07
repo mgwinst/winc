@@ -14,7 +14,7 @@ struct Target
 // state (files, options/flags, target, toolchain, pipeline)
 struct CompileOptions
 {
-    uint32_t flags_;
+    uint32_t flags_ = 0;
     Target target_;
 };
 

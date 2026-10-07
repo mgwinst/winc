@@ -4,13 +4,12 @@
 
 #include "frontend/parser/parser.hpp"
 #include "frontend/ast/ast.hpp"
+#include "frontend/error/source.hpp"
 #include "frontend/lexer/token.hpp"
 #include "frontend/translation_unit.hpp"
 #include "frontend/error/error.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/macros.hpp"
-
-using namespace Syntax;
 
 // we use Source{ prev_token } after we call expect(token)
 
@@ -30,8 +29,7 @@ void Parser::eat_token() noexcept
     prev_token_ = cur_token_;
 
     if (next_token_) {
-        cur_token_ = *next_token_;
-        next_token_.reset();
+        cur_token_ = *std::exchange(next_token_, std::nullopt);
     } else {
         cur_token_ = lexer_.lex_token();
     }
@@ -89,16 +87,16 @@ void Parser::parse_translation_unit() noexcept
     while (!is_cur_token(TokenType::END_OF_FILE)) {
         auto decl = parse_decl();
 
-        if (!decl)
+        if (!decl) {
             panic(decl.error());
-        else
+        } else {
             translation_unit->decls_.push_back(*decl);
+        }
     }
 
     ast_.root_ = translation_unit;
 }
 
-// var <ident>: parse_type()
 std::expected<TypeExpr*, Error> Parser::parse_type() noexcept
 {
     bool is_const = false;
@@ -107,15 +105,17 @@ std::expected<TypeExpr*, Error> Parser::parse_type() noexcept
         eat_token();
     }
 
-    if (!is_cur_token(TokenType::IDENTIFIER) && !is_cur_token(TokenType::TYPE))
+    if (!is_cur_token(TokenType::IDENTIFIER) && !is_cur_token(TokenType::TYPE)) {
         return std::unexpected{ SyntaxError{cur_token_, "Expecting built-in or user-defined type"} };
+    }
 
     auto type_name = std::string{ cur_token_.lexeme_ };
     TypeExpr* type = ast_.emplace<NamedTypeExpr>(std::move(type_name));
     eat_token();
 
-    if (is_const)
+    if (is_const) {
         type = ast_.emplace<QualifierTypeExpr>(QualifierKind::Const, type);
+    }
 
     switch (cur_token_.type_) {
         case TokenType::LBRACKET: {
@@ -181,6 +181,7 @@ std::expected<Decl*, Error> Parser::parse_decl() noexcept
 // x: int[4];
 // x: int[4] = {}
 // x: int[4] = {1, 2, 3, 4}
+// x: int[]  = {1, 2, 3, 4}
 
 std::expected<Decl*, Error> Parser::parse_var_decl() noexcept
 {
@@ -281,57 +282,31 @@ std::expected<Decl*, Error> Parser::parse_struct_def() noexcept
 
     EXPECT_LBRACE();
 
-    std::vector<ASTNode*> member_functions;
     std::vector<ASTNode*> fields;
 
     while (!is_cur_token(TokenType::RBRACE)) {
-        if (is_cur_token(TokenType::KEYWORD_FUNCTION)) {
-            eat_token();
+        auto field = parse_field_decl();
+        if (!field) return std::unexpected{ field.error() };
 
-            auto member_func = parse_member_function();
-            if (!member_func) return std::unexpected{ member_func.error() };
-
-            member_functions.push_back(*member_func);
-        } else {
-            auto field = parse_field();
-            if (!field) return std::unexpected{ field.error() };
-
-            fields.push_back(*field);
-        }
+        fields.push_back(*field);
     }
 
     EXPECT_RBRACE();
 
-    return ast_.emplace<RecordDecl>(RecordKind::Struct, std::string{ *name }, std::move(member_functions), std::move(fields), source);
+    return ast_.emplace<RecordDecl>(RecordKind::Struct, std::string{ *name }, std::move(fields), source);
 }
 
-std::expected<Decl*, Error> Parser::parse_member_function() noexcept
-{
-    auto is_dtor = false;
-    if (is_cur_token(TokenType::TILDE)) {
-        is_dtor = true;
-        eat_token();
-    }
-
-    auto func = parse_func_decl();
-    if (!func) return std::unexpected{ func.error() };
-
-    if (is_dtor) {
-        (*func)->name_.insert(0, "~");
-    }
-
-    return func;
-}
-
-std::expected<Decl*, Error> Parser::parse_field() noexcept
+std::expected<Decl*, Error> Parser::parse_field_decl() noexcept
 {
     return parse_var_decl();
 }
 
 std::expected<Stmt*, Error> Parser::parse_return_stmt() noexcept
 {
-    if (is_cur_token(TokenType::SEMICOLON))
+    if (is_cur_token(TokenType::SEMICOLON)) {
+        eat_token();
         return ast_.emplace<ReturnStmt>();
+    }
 
     auto expr = parse_expr();
     if (!expr) return std::unexpected{ expr.error() };
@@ -610,44 +585,50 @@ std::expected<Expr*, Error> Parser::nud(const Token token) noexcept
             auto operand = parse_expr(prec::unary);
             if (!operand) return std::unexpected{ operand.error() };
 
-            return ast_.emplace<UnaryExpr>(std::string{ token.lexeme_ }, *operand, false, Source{ prev_token_ }); // postfix = false (default value)
+            return ast_.emplace<UnaryExpr>(std::string{ token.lexeme_ }, *operand, false, Source{prev_token_}); // postfix = false (default value)
         }
 
         case TokenType::IDENTIFIER: {
-            return ast_.emplace<ReferenceExpr>(std::string{ token.lexeme_ }, Source{ prev_token_ });
+            return ast_.emplace<ReferenceExpr>(std::string{ token.lexeme_ }, Source{prev_token_});
         }
 
         case TokenType::INT_LITERAL: {
             auto value = sv_to_numeric<int64_t>(token.lexeme_);
             if (!value) return std::unexpected{ SyntaxError{cur_token_} };
 
-            return ast_.emplace<IntegerLiteralExpr>(*value);
+            return ast_.emplace<IntegerLiteralExpr>(*value, Source{prev_token_});
         }
 
         case TokenType::FLOAT_LITERAL: {
             auto value = sv_to_numeric<double>(token.lexeme_);
             if (!value) return std::unexpected{ SyntaxError{cur_token_} };
 
-            return ast_.emplace<FloatLiteralExpr>(*value);
+            return ast_.emplace<FloatLiteralExpr>(*value, Source{prev_token_});
         }
 
         case TokenType::HEX_LITERAL: {
             auto value = sv_to_numeric<int64_t>(token.lexeme_);
             if (!value) return std::unexpected{ SyntaxError{cur_token_} };
 
-            return ast_.emplace<IntegerLiteralExpr>(*value);
+            return ast_.emplace<IntegerLiteralExpr>(*value, Source{prev_token_});
+        }
+
+        case TokenType::CHAR_LITERAL: {
+            char c = token.lexeme_[1];
+            return ast_.emplace<CharLiteralExpr>(c, Source{prev_token_});
         }
 
         case TokenType::STRING_LITERAL: {
-            return ast_.emplace<StringLiteralExpr>(std::string{ token.lexeme_ });
+            std::string s{token.lexeme_.substr(1, token.lexeme_.size() - 2)};
+            return ast_.emplace<StringLiteralExpr>(s, Source{prev_token_});
         }
 
         case TokenType::KEYWORD_TRUE: {
-            return ast_.emplace<BooleanLiteralExpr>(true);
+            return ast_.emplace<BooleanLiteralExpr>(true, Source{prev_token_});
         }
 
         case TokenType::KEYWORD_FALSE: {
-            return ast_.emplace<BooleanLiteralExpr>(false);
+            return ast_.emplace<BooleanLiteralExpr>(false, Source{prev_token_});
         }
 
         case TokenType::LPAREN: {
@@ -656,20 +637,6 @@ std::expected<Expr*, Error> Parser::nud(const Token token) noexcept
 
             EXPECT_RPAREN();
             return expr;
-        }
-
-        case TokenType::KEYWORD_NEW: {
-            auto expr = parse_expr();
-            if (!expr) return std::unexpected{ expr.error() };
-
-            return ast_.emplace<NewExpr>(*expr);
-        }
-
-        case TokenType::KEYWORD_DELETE: {
-            auto expr = parse_expr();
-            if (!expr) return std::unexpected{ expr.error() };
-
-            return ast_.emplace<DeleteExpr>(*expr);
         }
 
         default:
@@ -780,11 +747,10 @@ std::expected<Expr*, Error> Parser::parse_expr(int min_prec) noexcept
     return left;
 }
 
+// {..., rest are 0's implicitly for both struct and array (where to handle this)}
 std::expected<Expr*, Error> Parser::parse_init_list_expr() noexcept
 {
-    Source source{ cur_token_ };
-
-    eat_token();
+    Source source{ prev_token_ };
 
     std::vector<ASTNode*> init_values;
 

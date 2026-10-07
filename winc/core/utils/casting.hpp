@@ -4,16 +4,32 @@
 #include <cassert>
 
 #include "frontend/ast/ast.hpp"
+#include "frontend/sema/types/types.hpp"
 
-using Syntax::ASTNode;
-
-// if we want to upcast to base pointer should we just static_assert or build mechanism for that in cast<T>
-// this is important
+template <AbstractNode T>
+bool category(auto* ptr)
+{
+    if constexpr (std::same_as<T, Decl>)
+        return ptr->kind_ >= ASTNodeKind::TranslationUnitDecl && ptr->kind_ <= ASTNodeKind::RecordDecl;
+    else if constexpr (std::same_as<T, Stmt>)
+        return ptr->kind_ >= ASTNodeKind::CompoundStmt && ptr->kind_ <= ASTNodeKind::ForStmt;
+    else
+        return ptr->kind_ >= ASTNodeKind::IntegerLiteralExpr && ptr->kind_ <= ASTNodeKind::InitListExpr;
+}
 
 template <DerivedFromASTNode Derived>
 bool isa(ASTNode* ptr)
 {
+    if constexpr (AbstractNode<Derived>)
+        return category<Derived>(ptr);
+
     return ptr && ptr->kind_ == ast_node_kind_v<Derived>;
+}
+
+template <DerivedFromType Derived>
+bool isa(Type* ptr)
+{
+    return ptr && ptr->kind_ == type_kind_v<Derived>;
 }
 
 template <typename T, typename U>

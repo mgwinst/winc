@@ -28,6 +28,7 @@ private:
     [[nodiscard]] Token lex_float() noexcept;
     [[nodiscard]] Token lex_hex() noexcept;
     [[nodiscard]] Token lex_identifier() noexcept;
+    [[nodiscard]] Token lex_char() noexcept;
     [[nodiscard]] Token lex_string() noexcept;
     void lex_comment() noexcept;
 

@@ -35,6 +35,8 @@ void Lexer::advance(std::size_t steps) noexcept
             return lex_number();
         } else if (std::isalpha(*cur_) || *cur_ == '_') {
             return lex_identifier();
+        } else if (*cur_ == '\'') {
+            return lex_char();
         } else if (*cur_ == '"') {
             return lex_string();
         } else if (*cur_ == '/' && *(cur_ + 1) == '/') {
@@ -110,11 +112,44 @@ Token Lexer::lex_number() noexcept
     }
 }
 
+[[nodiscard]] Token Lexer::lex_char() noexcept
+{
+    auto start = cur_;
+
+    advance();
+
+    if (*cur_ == '\0' || *cur_ == '\n') {
+        auto token = build_token(TokenType::INVALID, std::string_view{start, 1});
+        translation_unit_.diagnostics_.register_error(std::format("character literal missing terminating '\'' character"), Source{ token });
+        return token;
+    }
+
+    advance();
+
+    if (*cur_ != '\'') {
+        auto token = build_token(TokenType::INVALID, std::string_view{start, cur_});
+        translation_unit_.diagnostics_.register_error(std::format("character literal must contain exactly one character"), Source{ token });
+        return token;
+    }
+
+    advance();
+
+    auto end = cur_;
+
+    return build_token(TokenType::CHAR_LITERAL, std::string_view{start, end});
+}
+
 [[nodiscard]] Token Lexer::lex_string() noexcept
 {
     auto start = cur_;
 
     advance();
+
+    if (*cur_ == '"') {
+        auto token = build_token(TokenType::INVALID, std::string_view{start, 2});
+        translation_unit_.diagnostics_.register_error(std::format("string literal cannot be empty"), Source{ token });
+        return token;
+    }
 
     while (*cur_ != '\0') {
         if (*cur_ == '"') {

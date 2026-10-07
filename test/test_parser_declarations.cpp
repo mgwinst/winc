@@ -12,7 +12,7 @@ TEST_CASE("function definition")
     auto* func = cast<FuncDecl>(translation_unit->decls_[0]);
     CHECK(func->name_ == "func");
     CHECK(func->params_.size() == 0);
-    CHECK(cast<NamedTypeExpr>(func->return_type_)->name_ == "void");
+    CHECK(cast<NamedTypeExpr>(func->return_type_expr_)->name_ == "void");
 }
 
 TEST_CASE("single parameter")

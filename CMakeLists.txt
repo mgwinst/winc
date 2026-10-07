@@ -13,8 +13,10 @@ add_library(winc_lib STATIC
     winc/core/compiler/compiler.cpp
     winc/core/frontend/error/diagnostics.cpp
     winc/core/frontend/lexer/lexer.cpp
-    winc/core/frontend/lexer/token.cpp
     winc/core/frontend/parser/parser.cpp
+    winc/core/frontend/sema/types/type_table.cpp
+    winc/core/frontend/sema/analyzer.cpp
+    winc/core/utils/print/print.cpp
 )
 
 target_include_directories(winc_lib PUBLIC

@@ -5,9 +5,11 @@
 #include <utility>
 #include <vector>
 
-#include "frontend/error/source.hpp"
 #include "utils/structures/arena.hpp"
 #include "utils/enums.hpp"
+#include "frontend/error/source.hpp"
+
+class Symbol;
 
 enum class ASTNodeKind : uint8_t
 {
@@ -27,6 +29,7 @@ enum class ASTNodeKind : uint8_t
 
     IntegerLiteralExpr,
     FloatLiteralExpr,
+    HexLiteralExpr,
     CharLiteralExpr,
     StringLiteralExpr,
     BooleanLiteralExpr,
@@ -38,8 +41,6 @@ enum class ASTNodeKind : uint8_t
     MemberExpr,
     ArraySubscriptExpr,
     InitListExpr,
-    NewExpr,
-    DeleteExpr,
 
     QualifierTypeExpr,
     PointerTypeExpr,
@@ -49,8 +50,6 @@ enum class ASTNodeKind : uint8_t
 
     Invalid
 };
-
-namespace Syntax {
 
 struct ASTNode
 {
@@ -65,10 +64,12 @@ struct ASTNode
 struct Decl : ASTNode
 {
     std::string name_;
+    Symbol* symbol_;
 
     Decl(ASTNodeKind kind, std::string name, Source source = {}) :
         ASTNode{kind, source},
-        name_{ std::move(name) } {}
+        name_{ std::move(name) },
+        symbol_{ nullptr } {}
 };
 
 struct Stmt : ASTNode
@@ -97,7 +98,7 @@ struct TranslationUnitDecl : Decl
 
 struct VarDecl : Decl
 {
-    ASTNode* type_expr_;
+    ASTNode* type_expr_; // should be Type* through resolve_type() in parser since we call unconditionally during semantic analyzer pass
     ASTNode* init_; // single expr or init_list_expr
 
     VarDecl(std::string name, ASTNode* type_expr, ASTNode* init = nullptr, Source source = {}) :
@@ -118,26 +119,24 @@ struct ParamDecl : Decl
 struct FuncDecl : Decl
 {
     std::vector<ASTNode*> params_;
-    ASTNode* return_type_;
+    ASTNode* return_type_expr_;
     ASTNode* body_;
 
-    FuncDecl(std::string name, std::vector<ASTNode*> params, ASTNode* return_type, ASTNode* body, Source source = {}) :
+    FuncDecl(std::string name, std::vector<ASTNode*> params, ASTNode* return_type_expr, ASTNode* body, Source source = {}) :
         Decl{ASTNodeKind::FuncDecl, std::move(name), source},
         params_{ std::move(params) },
-        return_type_{ return_type },
+        return_type_expr_{ return_type_expr },
         body_{ body } {}
 };
 
 struct RecordDecl : Decl
 {
     RecordKind kind_;
-    std::vector<ASTNode*> member_functions_;
     std::vector<ASTNode*> fields_;
 
-    RecordDecl(RecordKind kind, std::string name, std::vector<ASTNode*> member_functions, std::vector<ASTNode*> fields, Source source = {}) :
+    RecordDecl(RecordKind kind, std::string name, std::vector<ASTNode*> fields, Source source = {}) :
         Decl{ASTNodeKind::RecordDecl, std::move(name), source},
         kind_{ kind },
-        member_functions_{ std::move(member_functions) },
         fields_{ std::move(fields) } {}
 };
 
@@ -214,8 +213,8 @@ struct IntegerLiteralExpr : Expr
 {
     int64_t value_;
 
-    IntegerLiteralExpr(int64_t value) :
-        Expr{ ASTNodeKind::IntegerLiteralExpr },
+    IntegerLiteralExpr(int64_t value, Source source = {}) :
+        Expr{ ASTNodeKind::IntegerLiteralExpr, source},
         value_{ value } {}
 };
 
@@ -223,8 +222,17 @@ struct FloatLiteralExpr : Expr
 {
     double value_;
 
-    FloatLiteralExpr(double value) :
-        Expr{ ASTNodeKind::FloatLiteralExpr },
+    FloatLiteralExpr(double value, Source source = {}) :
+        Expr{ASTNodeKind::FloatLiteralExpr, source},
+        value_{ value } {}
+};
+
+struct HexLiteralExpr : Expr
+{
+    int64_t value_;
+
+    HexLiteralExpr(int64_t value, Source source = {}) :
+        Expr{ASTNodeKind::HexLiteralExpr, source},
         value_{ value } {}
 };
 
@@ -232,8 +240,8 @@ struct CharLiteralExpr : Expr
 {
     char value_;
 
-    CharLiteralExpr(char value) :
-        Expr{ ASTNodeKind::CharLiteralExpr },
+    CharLiteralExpr(char value, Source source = {}) :
+        Expr{ASTNodeKind::CharLiteralExpr, source},
         value_{ value } {}
 };
 
@@ -241,8 +249,8 @@ struct StringLiteralExpr : Expr
 {
     std::string value_;
 
-    StringLiteralExpr(std::string value) :
-        Expr{ ASTNodeKind::StringLiteralExpr },
+    StringLiteralExpr(std::string value, Source source = {}) :
+        Expr{ASTNodeKind::StringLiteralExpr, source},
         value_{ std::move(value) } {}
 };
 
@@ -250,8 +258,8 @@ struct BooleanLiteralExpr : Expr
 {
     bool value_;
 
-    BooleanLiteralExpr(bool value) :
-        Expr{ ASTNodeKind::BooleanLiteralExpr },
+    BooleanLiteralExpr(bool value, Source source = {}) :
+        Expr{ASTNodeKind::BooleanLiteralExpr, source},
         value_{ value } {}
 };
 
@@ -283,6 +291,7 @@ struct BinaryExpr : Expr
 struct ReferenceExpr : Expr
 {
     std::string name_;
+    Symbol* symbol_;
 
     ReferenceExpr(std::string name, Source source = {}) :
         Expr{ASTNodeKind::ReferenceExpr, source},
@@ -333,24 +342,6 @@ struct InitListExpr : Expr
         init_values_{ std::move(init_values) } {}
 };
 
-struct NewExpr : Expr
-{
-    ASTNode* constructor_;
-
-    NewExpr(ASTNode* constructor, Source source = {}) :
-        Expr(ASTNodeKind::NewExpr, source),
-        constructor_{ constructor } {}
-};
-
-struct DeleteExpr : Expr
-{
-    ASTNode* pointer_;
-
-    DeleteExpr(ASTNode* pointer, Source source = {}) :
-        Expr(ASTNodeKind::DeleteExpr, source),
-        pointer_{ pointer } {}
-};
-
 struct QualifierTypeExpr : TypeExpr
 {
     QualifierKind kind_;
@@ -391,52 +382,54 @@ struct NamedTypeExpr : TypeExpr
         name_{ std::move(name) } {}
 };
 
-} // namespace Syntax
-
 template <typename T>
 inline constexpr ASTNodeKind ast_node_kind_v = ASTNodeKind::Invalid;
 
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::TranslationUnitDecl> = ASTNodeKind::TranslationUnitDecl;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::VarDecl>             = ASTNodeKind::VarDecl;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ParamDecl>           = ASTNodeKind::ParamDecl;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::FuncDecl>            = ASTNodeKind::FuncDecl;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::RecordDecl>          = ASTNodeKind::RecordDecl;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::CompoundStmt>        = ASTNodeKind::CompoundStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ReturnStmt>          = ASTNodeKind::ReturnStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::BreakStmt>           = ASTNodeKind::BreakStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ContinueStmt>        = ASTNodeKind::ContinueStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::IfStmt>              = ASTNodeKind::IfStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::WhileStmt>           = ASTNodeKind::WhileStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ForStmt>             = ASTNodeKind::ForStmt;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::IntegerLiteralExpr>  = ASTNodeKind::IntegerLiteralExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::FloatLiteralExpr>    = ASTNodeKind::FloatLiteralExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::CharLiteralExpr>     = ASTNodeKind::CharLiteralExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::StringLiteralExpr>   = ASTNodeKind::StringLiteralExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::BooleanLiteralExpr>  = ASTNodeKind::BooleanLiteralExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::UnaryExpr>           = ASTNodeKind::UnaryExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::BinaryExpr>          = ASTNodeKind::BinaryExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ReferenceExpr>       = ASTNodeKind::ReferenceExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::CallExpr>            = ASTNodeKind::CallExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::MemberExpr>          = ASTNodeKind::MemberExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ArraySubscriptExpr>  = ASTNodeKind::ArraySubscriptExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::InitListExpr>        = ASTNodeKind::InitListExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::NewExpr>             = ASTNodeKind::NewExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::DeleteExpr>          = ASTNodeKind::DeleteExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::QualifierTypeExpr>   = ASTNodeKind::QualifierTypeExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::PointerTypeExpr>     = ASTNodeKind::PointerTypeExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::ArrayTypeExpr>       = ASTNodeKind::ArrayTypeExpr;
-template <> inline constexpr ASTNodeKind ast_node_kind_v<Syntax::NamedTypeExpr>       = ASTNodeKind::NamedTypeExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<TranslationUnitDecl> = ASTNodeKind::TranslationUnitDecl;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<VarDecl>             = ASTNodeKind::VarDecl;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ParamDecl>           = ASTNodeKind::ParamDecl;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<FuncDecl>            = ASTNodeKind::FuncDecl;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<RecordDecl>          = ASTNodeKind::RecordDecl;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<CompoundStmt>        = ASTNodeKind::CompoundStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ReturnStmt>          = ASTNodeKind::ReturnStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<BreakStmt>           = ASTNodeKind::BreakStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ContinueStmt>        = ASTNodeKind::ContinueStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<IfStmt>              = ASTNodeKind::IfStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<WhileStmt>           = ASTNodeKind::WhileStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ForStmt>             = ASTNodeKind::ForStmt;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<IntegerLiteralExpr>  = ASTNodeKind::IntegerLiteralExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<FloatLiteralExpr>    = ASTNodeKind::FloatLiteralExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<HexLiteralExpr>      = ASTNodeKind::HexLiteralExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<CharLiteralExpr>     = ASTNodeKind::CharLiteralExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<StringLiteralExpr>   = ASTNodeKind::StringLiteralExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<BooleanLiteralExpr>  = ASTNodeKind::BooleanLiteralExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<UnaryExpr>           = ASTNodeKind::UnaryExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<BinaryExpr>          = ASTNodeKind::BinaryExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ReferenceExpr>       = ASTNodeKind::ReferenceExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<CallExpr>            = ASTNodeKind::CallExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<MemberExpr>          = ASTNodeKind::MemberExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ArraySubscriptExpr>  = ASTNodeKind::ArraySubscriptExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<InitListExpr>        = ASTNodeKind::InitListExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<QualifierTypeExpr>   = ASTNodeKind::QualifierTypeExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<PointerTypeExpr>     = ASTNodeKind::PointerTypeExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<ArrayTypeExpr>       = ASTNodeKind::ArrayTypeExpr;
+template <> inline constexpr ASTNodeKind ast_node_kind_v<NamedTypeExpr>       = ASTNodeKind::NamedTypeExpr;
 
 template <typename T>
-concept DerivedFromASTNode = std::derived_from<T, Syntax::ASTNode>;
+concept DerivedFromASTNode = std::derived_from<T, ASTNode>;
+
+template <typename T>
+concept AbstractNode =
+    std::same_as<T, Decl> ||
+    std::same_as<T, Stmt> ||
+    std::same_as<T, Expr>;
 
 class AST
 {
 public:
-    Syntax::ASTNode* root_ = nullptr;
+    ASTNode* root_ = nullptr;
 
     AST() = default;
-
     AST(const AST&) = delete;
     AST& operator=(const AST&) = delete;
     AST(AST&&) = default;

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string_view>
+#include <format>
 
 enum class TokenType
 {
@@ -10,6 +11,7 @@ enum class TokenType
     INT_LITERAL,
     FLOAT_LITERAL,
     HEX_LITERAL,
+    CHAR_LITERAL,
     STRING_LITERAL,
     TYPE,
     KEYWORD_FUNCTION,
@@ -28,7 +30,6 @@ enum class TokenType
     KEYWORD_INLINE,
     KEYWORD_NEW,
     KEYWORD_DELETE,
-    KEYWORD_SELF,
     LPAREN,
     RPAREN,
     LBRACKET,
@@ -81,6 +82,7 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::INT_LITERAL:           return "INT LITERAL";
         case TokenType::FLOAT_LITERAL:         return "FLOAT LITERAL";
         case TokenType::HEX_LITERAL:           return "HEX LITERAL";
+        case TokenType::CHAR_LITERAL:          return "CHAR LITERAL";
         case TokenType::STRING_LITERAL:        return "STRING_LITERAL";
         case TokenType::TYPE:                  return "TYPE";
         case TokenType::KEYWORD_FUNCTION:      return "KEYWORD_FUNCTION";
@@ -99,7 +101,6 @@ inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
         case TokenType::KEYWORD_INLINE:        return "KEYWORD_INLINE";
         case TokenType::KEYWORD_NEW:           return "KEYWORD_NEW";
         case TokenType::KEYWORD_DELETE:        return "KEYWORD_DELETE";
-        case TokenType::KEYWORD_SELF:          return "KEYWORD_SELF";
         case TokenType::LPAREN:                return "LPAREN";
         case TokenType::RPAREN:                return "RPAREN";
         case TokenType::LBRACKET:              return "LBRACKET";
@@ -152,7 +153,7 @@ inline const std::unordered_set<std::string_view> built_in_types {
     "int", "int8", "int16", "int32", "int64",
     "uint", "uint8", "uint16", "uint32", "uint64",
     "float", "float16", "float32", "float64",
-    "str", "byte", "bool", "void"
+    "char", "byte", "bool", "void"
 };
 
 inline const std::unordered_map<std::string_view, TokenType> keywords {
@@ -170,9 +171,6 @@ inline const std::unordered_map<std::string_view, TokenType> keywords {
     {"true",     TokenType::KEYWORD_TRUE},
     {"false",    TokenType::KEYWORD_FALSE},
     {"inline",   TokenType::KEYWORD_INLINE},
-    {"new",      TokenType::KEYWORD_NEW},
-    {"delete",   TokenType::KEYWORD_DELETE},
-    {"self",     TokenType::KEYWORD_SELF},
 };
 
 inline const std::unordered_map<char, TokenType> single_symbol_map {
@@ -226,10 +224,26 @@ struct Token {
     std::string_view lexeme_, source_line_;
     std::size_t line_number_, column_number_, length_;
 
-    Token(TokenType type, std::string_view lexeme, std::string_view source_line, std::size_t line_number, std::size_t column_number, std::size_t length) noexcept;
-    Token(TokenType type, std::string_view lexeme) noexcept;
+    Token(TokenType type, std::string_view lexeme, std::string_view source_line, std::size_t line_number, std::size_t column_number, std::size_t length) noexcept:
+        type_{ type },
+        lexeme_{ lexeme },
+        source_line_{ source_line },
+        line_number_{ line_number },
+        column_number_{ column_number },
+        length_{ length } {}
+
+    Token(TokenType type, std::string_view lexeme) noexcept:
+        type_{ type },
+        lexeme_{ lexeme },
+        line_number_{ 0 },
+        column_number_{ 0 },
+        length_{ 0 } {}
+
     Token() = default;
     ~Token() = default;
 
-    std::string to_string() const noexcept;
+    std::string to_string() const noexcept
+    {
+        return std::format("[{}] {}:{} {} ", token_type_to_string(type_), line_number_, column_number_, lexeme_);
+    }
 };
