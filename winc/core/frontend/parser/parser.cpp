@@ -28,9 +28,12 @@ void Parser::eat_token() noexcept
 {
     prev_token_ = cur_token_;
 
-    if (next_token_) {
+    if (next_token_)
+    {
         cur_token_ = *std::exchange(next_token_, std::nullopt);
-    } else {
+    }
+    else
+    {
         cur_token_ = lexer_.lex_token();
     }
 }
@@ -50,7 +53,8 @@ bool Parser::is_next_token(const TokenType token_type) noexcept
 
 void Parser::panic(const std::optional<Error> error) noexcept
 {
-    if (error) {
+    if (error)
+    {
         tranlation_unit_.diagnostics_.register_error(error.value());
     }
 
@@ -59,7 +63,8 @@ void Parser::panic(const std::optional<Error> error) noexcept
            !is_cur_token(TokenType::KEYWORD_VAR) &&
            !is_cur_token(TokenType::RBRACE) &&
            !is_cur_token(TokenType::SEMICOLON) &&
-           !is_cur_token(TokenType::END_OF_FILE)) {
+           !is_cur_token(TokenType::END_OF_FILE))
+    {
         eat_token();
     }
 
@@ -68,7 +73,8 @@ void Parser::panic(const std::optional<Error> error) noexcept
 
 std::expected<std::string_view, Error> Parser::match(TokenType token_type) noexcept
 {
-    if (is_cur_token(token_type)) {
+    if (is_cur_token(token_type))
+    {
         auto lexeme = cur_token_.lexeme_;
         eat_token();
 
@@ -84,12 +90,16 @@ void Parser::parse_translation_unit() noexcept
 
     eat_token();
 
-    while (!is_cur_token(TokenType::END_OF_FILE)) {
+    while (!is_cur_token(TokenType::END_OF_FILE))
+    {
         auto decl = parse_decl();
 
-        if (!decl) {
+        if (!decl)
+        {
             panic(decl.error());
-        } else {
+        }
+        else
+        {
             translation_unit->decls_.push_back(*decl);
         }
     }
@@ -100,12 +110,14 @@ void Parser::parse_translation_unit() noexcept
 std::expected<TypeExpr*, Error> Parser::parse_type() noexcept
 {
     bool is_const = false;
-    if (is_cur_token(TokenType::KEYWORD_CONST)) {
+    if (is_cur_token(TokenType::KEYWORD_CONST))
+    {
         is_const = true;
         eat_token();
     }
 
-    if (!is_cur_token(TokenType::IDENTIFIER) && !is_cur_token(TokenType::TYPE)) {
+    if (!is_cur_token(TokenType::IDENTIFIER) && !is_cur_token(TokenType::TYPE))
+    {
         return std::unexpected{ SyntaxError{cur_token_, "Expecting built-in or user-defined type"} };
     }
 
@@ -113,15 +125,18 @@ std::expected<TypeExpr*, Error> Parser::parse_type() noexcept
     TypeExpr* type = ast_.emplace<NamedTypeExpr>(std::move(type_name));
     eat_token();
 
-    if (is_const) {
+    if (is_const)
+    {
         type = ast_.emplace<QualifierTypeExpr>(QualifierKind::Const, type);
     }
 
-    switch (cur_token_.type_) {
+    switch (cur_token_.type_)
+    {
         case TokenType::LBRACKET: {
             eat_token();
 
-            if (is_cur_token(TokenType::RBRACKET)) {
+            if (is_cur_token(TokenType::RBRACKET))
+            {
                 eat_token();
                 return ast_.emplace<ArrayTypeExpr>(type);
             }
@@ -195,10 +210,12 @@ std::expected<Decl*, Error> Parser::parse_var_decl() noexcept
     auto type = parse_type();
     if (!type) return std::unexpected{ type.error() };
 
-    if (is_cur_token(TokenType::EQUAL)) {
+    if (is_cur_token(TokenType::EQUAL))
+    {
         eat_token();
 
-        if (is_cur_token(TokenType::LBRACE)) {
+        if (is_cur_token(TokenType::LBRACE))
+        {
             eat_token();
 
             auto expr = parse_init_list_expr();
@@ -215,7 +232,9 @@ std::expected<Decl*, Error> Parser::parse_var_decl() noexcept
         EXPECT_SEMICOLON();
 
         return ast_.emplace<VarDecl>(std::string{ *name }, *type, *expr, source);
-    } else {
+    }
+    else
+    {
         EXPECT_SEMICOLON();
 
         return ast_.emplace<VarDecl>(std::string{ *name }, *type, nullptr, source);
@@ -233,7 +252,8 @@ std::expected<Decl*, Error> Parser::parse_func_decl() noexcept
 
     std::vector<ASTNode*> params;
 
-    while (!is_cur_token(TokenType::RPAREN)) {
+    while (!is_cur_token(TokenType::RPAREN))
+    {
         auto param_decl = parse_param_decl();
         if (!param_decl) return std::unexpected{ param_decl.error() };
 
@@ -284,7 +304,8 @@ std::expected<Decl*, Error> Parser::parse_struct_def() noexcept
 
     std::vector<ASTNode*> fields;
 
-    while (!is_cur_token(TokenType::RBRACE)) {
+    while (!is_cur_token(TokenType::RBRACE))
+    {
         auto field = parse_field_decl();
         if (!field) return std::unexpected{ field.error() };
 
@@ -303,7 +324,8 @@ std::expected<Decl*, Error> Parser::parse_field_decl() noexcept
 
 std::expected<Stmt*, Error> Parser::parse_return_stmt() noexcept
 {
-    if (is_cur_token(TokenType::SEMICOLON)) {
+    if (is_cur_token(TokenType::SEMICOLON))
+    {
         eat_token();
         return ast_.emplace<ReturnStmt>();
     }
@@ -321,16 +343,21 @@ std::expected<Stmt*, Error> Parser::parse_compound_stmt() noexcept
 {
     std::vector<ASTNode*> children;
 
-    while (!is_cur_token(TokenType::RBRACE)) {
-        switch (cur_token_.type_) {
+    while (!is_cur_token(TokenType::RBRACE))
+    {
+        switch (cur_token_.type_)
+        {
             case TokenType::IDENTIFIER: {
-                if (is_next_token(TokenType::COLON)) {
+                if (is_next_token(TokenType::COLON))
+                {
                     auto decl = parse_var_decl();
                     if (!decl) return std::unexpected{ decl.error() };
 
                     children.push_back(*decl);
                     break;
-                } else {
+                }
+                else
+                {
                     auto expr = parse_expr();
                     if (!expr) return std::unexpected{ expr.error() };
 
@@ -474,7 +501,8 @@ std::expected<Stmt*, Error> Parser::parse_if_stmt() noexcept
     auto then_branch_body = parse_compound_stmt();
     if (!then_branch_body) return std::unexpected{ then_branch_body.error() };
 
-    if (is_cur_token(TokenType::KEYWORD_ELSE)) {
+    if (is_cur_token(TokenType::KEYWORD_ELSE))
+    {
         eat_token();
 
         EXPECT_LBRACE();
@@ -691,7 +719,8 @@ std::expected<Expr*, Error> Parser::led(const Token token, Expr* left) noexcept
         case TokenType::LPAREN: {
             std::vector<ASTNode*> args;
 
-            while (!is_cur_token(TokenType::RPAREN)) {
+            while (!is_cur_token(TokenType::RPAREN))
+            {
                 auto arg = parse_expr();
                 if (!arg) return std::unexpected{ arg.error() };
 
@@ -733,7 +762,8 @@ std::expected<Expr*, Error> Parser::parse_expr(int min_prec) noexcept
     auto left = nud(cur_token_);
     if (!left) return std::unexpected{ left.error() };
 
-    while (true) {
+    while (true)
+    {
         auto lbp = infix_lbp(cur_token_);
 
         if (lbp <= min_prec) break;
@@ -754,7 +784,8 @@ std::expected<Expr*, Error> Parser::parse_init_list_expr() noexcept
 
     std::vector<ASTNode*> init_values;
 
-    while (!is_cur_token(TokenType::RBRACE)) {
+    while (!is_cur_token(TokenType::RBRACE))
+    {
         auto expr = parse_expr();
         if (!expr) return std::unexpected{ expr.error() };
 

@@ -12,7 +12,8 @@ inline bool is_lvalue(ASTNode* node)
 
 inline bool is_const(Type* type)
 {
-    if (auto* qual = dyn_cast<QualifierType>(type)) {
+    if (auto* qual = dyn_cast<QualifierType>(type))
+    {
         return qual->kind_ == QualifierKind::Const;
     }
 
@@ -33,7 +34,8 @@ inline bool is_integral(Type* type)
 
 inline bool convertible_to_boolean(Type* type)
 {
-    if (is_const(type)) {
+    if (is_const(type))
+    {
         return convertible_to_boolean(cast<QualifierType>(type)->inner_type_);
     }
 
@@ -86,7 +88,8 @@ inline bool is_literal(ASTNode* node)
 
 inline Type* remove_const_qualifier(Type* type)
 {
-    if (auto* qual_type = dyn_cast<QualifierType>(type)) {
+    if (auto* qual_type = dyn_cast<QualifierType>(type))
+    {
         return qual_type->inner_type_;
     }
 
@@ -95,8 +98,10 @@ inline Type* remove_const_qualifier(Type* type)
 
 inline bool is_unsigned(Type* type)
 {
-    if (is_scalar(type)) {
-        if (auto* t = dyn_cast<IntegerType>(type)) {
+    if (is_scalar(type))
+    {
+        if (auto* t = dyn_cast<IntegerType>(type))
+        {
             return t->is_signed_ == false;
         }
     }
@@ -106,7 +111,8 @@ inline bool is_unsigned(Type* type)
 
 inline bool is_pointer_dereference(ASTNode* node)
 {
-    if (auto* pd = dyn_cast<UnaryExpr>(node)) {
+    if (auto* pd = dyn_cast<UnaryExpr>(node))
+    {
         return pd->op_ == "*" && pd->is_postfix_ == false;
     }
 

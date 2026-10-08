@@ -21,7 +21,6 @@ public:
         desugar(ast_.root_);
     }
 
-
 private:
     TranslationUnit& translation_unit_;
     AST& ast_;

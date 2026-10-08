@@ -18,7 +18,8 @@ inline std::size_t hash_combine(std::size_t seed, void* ptr)
 inline std::size_t hash_vector(std::size_t seed, const std::vector<Type*>& vec)
 {
     auto h = seed;
-    for (auto v : vec) {
+    for (auto v : vec)
+    {
         h = hash_combine(h, v);
     }
 

@@ -33,9 +33,12 @@ public:
     {
         auto& bucket = buckets_[TypeHasher<T>::hash(args...)];
 
-        for (Type* ptr : bucket) {
-            if (T* p = dyn_cast<T>(ptr)) {
-                if (*p == T{ args... }) {
+        for (Type* ptr : bucket)
+        {
+            if (T* p = dyn_cast<T>(ptr))
+            {
+                if (*p == T{ args... })
+                {
                     return ptr;
                 }
             }

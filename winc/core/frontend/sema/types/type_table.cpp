@@ -2,7 +2,8 @@
 #include "utils/casting.hpp"
 #include "utils/fatal.hpp"
 
-namespace {
+namespace
+{
     constexpr bool UNSIGNED = false;
     constexpr bool SIGNED = true;
 }
@@ -34,47 +35,54 @@ TypeTable::TypeTable()
 
 Type* TypeTable::resolve_type(ASTNode* type_expr)
 {
-    if (auto* qual = dyn_cast<QualifierTypeExpr>(type_expr)) {
-
+    if (auto* qual = dyn_cast<QualifierTypeExpr>(type_expr))
+    {
         if (qual->kind_ == QualifierKind::Const) {
             return get_or_create<QualifierType>(QualifierKind::Const, resolve_type(qual->inner_));
         }
 
         fatal_error("qualifier not supported");
     }
-
-    else if (auto* ptr = dyn_cast<PointerTypeExpr>(type_expr)) {
+    else if (auto* ptr = dyn_cast<PointerTypeExpr>(type_expr))
+    {
         return get_or_create<PointerType>(resolve_type(ptr->inner_));
     }
-
-    else if (auto* arr = dyn_cast<ArrayTypeExpr>(type_expr)) {
-
+    else if (auto* arr = dyn_cast<ArrayTypeExpr>(type_expr))
+    {
         if (!arr->size_)
+        {
             fatal_error("array must have a size");
+        }
 
-        if (auto* size = dyn_cast<IntegerLiteralExpr>(arr->size_)) {
+        if (auto* size = dyn_cast<IntegerLiteralExpr>(arr->size_))
+        {
             return get_or_create<ArrayType>(resolve_type(arr->inner_), static_cast<uint64_t>(size->value_));
-        } else {
+        }
+        else
+        {
             fatal_error("array size must be Integer constant");
         }
     }
-
-    else if (auto* named = dyn_cast<NamedTypeExpr>(type_expr)) {
-
+    else if (auto* named = dyn_cast<NamedTypeExpr>(type_expr))
+    {
         if (auto it = builtin_types_.find(named->name_); it != builtin_types_.end())
+        {
             return it->second;
+        }
 
         if (auto it = user_defined_types_.find(named->name_); it != user_defined_types_.end())
+        {
             return it->second;
+        }
 
         // we need access to the diagnostics object so we can report proper error instead of terminate
         fatal_error(std::format("type '{}' does not exist", named->name_));
     }
-
-    else if (auto* func = dyn_cast<FuncDecl>(type_expr)) {
-
+    else if (auto* func = dyn_cast<FuncDecl>(type_expr))
+    {
         std::vector<Type*> param_types;
-        for (auto* param : static_cast_view<ParamDecl>(func->params_)) {
+        for (auto* param : static_cast_view<ParamDecl>(func->params_))
+        {
             param_types.push_back(resolve_type(param->type_expr_));
         }
 
@@ -82,11 +90,11 @@ Type* TypeTable::resolve_type(ASTNode* type_expr)
 
         return get_or_create<FunctionType>(func->name_, param_types, ret_type);
     }
-
-    else if (auto* record = dyn_cast<RecordDecl>(type_expr)) {
-
+    else if (auto* record = dyn_cast<RecordDecl>(type_expr))
+    {
         std::vector<Field> fields;
-        for (auto* field : static_cast_view<VarDecl>(record->fields_)) {
+        for (auto* field : static_cast_view<VarDecl>(record->fields_))
+        {
             Type* field_type = resolve_type(field->type_expr_);
             fields.emplace_back(field->name_, field_type);
         }

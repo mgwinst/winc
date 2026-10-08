@@ -77,7 +77,8 @@ enum class TokenType
 
 inline constexpr std::string_view token_type_to_string(TokenType type) noexcept
 {
-    switch (type) {
+    switch (type)
+    {
         case TokenType::IDENTIFIER:            return "IDENTIFIER";
         case TokenType::INT_LITERAL:           return "INT LITERAL";
         case TokenType::FLOAT_LITERAL:         return "FLOAT LITERAL";

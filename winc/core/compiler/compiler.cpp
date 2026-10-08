@@ -12,7 +12,8 @@ void Compiler::run(std::string_view input_file, const CompileOptions& options)
 
     analyze(translation_unit, ast);
 
-    if (options.flags_ & DUMP_AST) {
+    if (options.flags_ & DUMP_AST)
+    {
         print(ast);
     }
 

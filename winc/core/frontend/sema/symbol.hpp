@@ -66,10 +66,13 @@ struct SymbolTable
     using SymbolMap = std::unordered_multimap<std::string, Symbol*>;
     using SymbolRange = std::ranges::subrange<SymbolMap::iterator, SymbolMap::iterator, std::ranges::subrange_kind::sized>;
 
-    std::optional<SymbolRange> lookup(const std::string& identifier) {
-        for (auto& scope : std::views::reverse(scopes_)) {
+    std::optional<SymbolRange> lookup(const std::string& identifier)
+    {
+        for (auto& scope : std::views::reverse(scopes_))
+        {
             auto [first, last] = scope.equal_range(identifier);
-            if (first != last) {
+            if (first != last)
+            {
                 return SymbolRange{first, last, static_cast<std::size_t>(std::distance(first, last))};
             }
         }
