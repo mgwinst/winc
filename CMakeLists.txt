@@ -9,36 +9,23 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Boost REQUIRED)
 
 add_library(winc_lib STATIC
-    winlang/core/driver/compile.cpp
-    winlang/core/utils/print/print.cpp
-    winlang/core/frontend/lexer/lexer.cpp 
-    winlang/core/frontend/parser/parser.cpp 
-    winlang/core/frontend/error/diagnostics.cpp
-    winlang/core/frontend/sema/types/type_table.cpp
-    winlang/core/frontend/sema/symbol.cpp
-    winlang/core/frontend/sema/analyzer.cpp
-    winlang/core/middleend/ir/BasicBlock.cpp
-    winlang/core/middleend/ir/Constant.cpp
-    winlang/core/middleend/ir/Function.cpp
-    winlang/core/middleend/ir/Instruction.cpp
-    winlang/core/middleend/ir/Program.cpp
-    winlang/core/middleend/ir/Value.cpp
-    winlang/core/middleend/lowering/LoweringEngine.cpp
-    winlang/core/analysis/escape.cpp
-    winlang/core/analysis/dominator.cpp
-    winlang/core/middleend/transforms/trivial_dce.cpp
-    winlang/core/middleend/transforms/dse.cpp
-    winlang/core/middleend/transforms/cleanup_cfg.cpp
-    winlang/core/middleend/transforms/mem2reg.cpp
+    winc/core/driver/driver.cpp
+    winc/core/compiler/compiler.cpp
+    winc/core/frontend/error/diagnostics.cpp
+    winc/core/frontend/lexer/lexer.cpp
+    winc/core/frontend/parser/parser.cpp
+    winc/core/frontend/sema/types/type_table.cpp
+    winc/core/frontend/sema/analyzer.cpp
+    winc/core/utils/print/print.cpp
 )
 
 target_include_directories(winc_lib PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/winlang/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/winc/core
 )
 
 target_link_libraries(winc_lib PUBLIC Boost::boost)
 
-add_executable(${PROJECT_NAME} winlang/main.cpp)
+add_executable(${PROJECT_NAME} winc/main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE winc_lib)
 
 target_compile_options(${PROJECT_NAME} PRIVATE

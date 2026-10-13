@@ -1,3 +1,5 @@
-/docs
 /build
+/.cache
 .vscode
+.clangd
+.DS_Store

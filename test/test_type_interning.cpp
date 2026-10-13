@@ -2,8 +2,6 @@
 
 #include "frontend/sema/types/type_table.hpp"
 
-using namespace Syntax;
-
 #define INITIAL_BUILTIN_COUNT (18)
 #define INITIAL_USER_DEFINED_COUNT (0)
 
@@ -28,7 +26,7 @@ TEST_CASE("canonicalize types")
 
     SUBCASE("user-defined type")
     {
-        auto record = std::make_unique<RecordDecl>(RecordKind::Struct, "Foo", std::vector<ASTNode*>{ });
+        auto record = std::make_unique<RecordDecl>(RecordKind::Struct, "Foo", std::vector<ASTNode*>{});
 
         Type* foo1 = table.resolve_type(record.get());
         Type* foo2 = table.resolve_type(record.get());
@@ -40,6 +38,6 @@ TEST_CASE("canonicalize types")
 
     SUBCASE("composite type")
     {
-        
+
     }
 }
