@@ -43,8 +43,13 @@ Value* LoweringEngine::lower(ASTNode* node)
         } else {
             auto* init_value = lower(var->init_);
 
-            if (load_required(var->init_))
+            if (load_required(var->init_)) {
                 init_value = builder_.create<Load>(init_value);
+            }
+
+            if (isa<InitListExpr>(var->init_)) {
+                return nullptr;
+            }
 
             return builder_.create<Store>(alloca, init_value);
         }
@@ -237,8 +242,10 @@ Value* LoweringEngine::lower(ASTNode* node)
         auto* right = lower(binary->right_);
 
         if (op == BinaryOp::Assign) {
-            if (load_required(binary->right_))
+            if (load_required(binary->right_)) {
                 right = builder_.create<Load>(right);
+            }
+
             return builder_.create<Store>(left, right);
         }
 
@@ -359,6 +366,14 @@ Value* LoweringEngine::lower(ASTNode* node)
     }
 
     else if (auto* init_list_expr = dyn_cast<InitListExpr>(node)) {
+        auto* base_ptr = alloca_map_[cast<VarDecl>(init_list_expr->target_)->name_];
+
+        for (auto i = 0uz; i < init_list_expr->init_values_.size(); ++i) {
+            auto* index = builder_.create<Const>(static_cast<int64_t>(i));
+            auto* ptr = builder_.create<PtrAdd>(base_ptr, index);
+            builder_.create<Store>(ptr, lower(init_list_expr->init_values_[i]));
+        }
+
         return nullptr;
     }
 

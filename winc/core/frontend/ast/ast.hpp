@@ -336,10 +336,12 @@ struct ArraySubscriptExpr : Expr
 struct InitListExpr : Expr
 {
     std::vector<ASTNode*> init_values_;
+    ASTNode* target_;
 
     InitListExpr(std::vector<ASTNode*> init_values, Source source = {}) :
         Expr{ASTNodeKind::InitListExpr, source},
-        init_values_{ std::move(init_values) } {}
+        init_values_{ std::move(init_values) },
+        target_{ nullptr } {}
 };
 
 struct QualifierTypeExpr : TypeExpr

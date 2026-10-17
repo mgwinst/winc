@@ -278,6 +278,8 @@ Type* SemanticAnalyzer::check_type(ASTNode* node)
                     register_error(std::format("cannot use initializer list on non-aggregate type '{}'", type_to_str(var->symbol_->type_)), init_list->source_);
                     return nullptr;
                 }
+
+                init_list->target_ = var;
             }
             else
             {
