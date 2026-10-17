@@ -5,6 +5,7 @@
 
 #include "frontend/ast/ast.hpp"
 #include "frontend/sema/types/types.hpp"
+#include "middleend/ir/IR.hpp"
 
 template <AbstractNode T>
 bool category(auto* ptr)
@@ -30,6 +31,18 @@ template <DerivedFromType Derived>
 bool isa(Type* ptr)
 {
     return ptr && ptr->kind_ == type_kind_v<Derived>;
+}
+
+template <DerivedFromValue Derived>
+bool isa(Value* ptr)
+{
+    return ptr && ptr->kind_ == value_kind_v<Derived>;
+}
+
+template <DerivedFromValue Derived>
+bool isa(const std::unique_ptr<Value>& ptr)
+{
+    return ptr && ptr->kind_ == value_kind_v<Derived>;
 }
 
 template <typename T, typename U>

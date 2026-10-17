@@ -16,6 +16,12 @@ add_library(winc_lib STATIC
     winc/core/frontend/parser/parser.cpp
     winc/core/frontend/sema/types/type_table.cpp
     winc/core/frontend/sema/analyzer.cpp
+    winc/core/middleend/ir/BasicBlock.cpp
+    winc/core/middleend/ir/Function.cpp
+    winc/core/middleend/ir/Instruction.cpp
+    winc/core/middleend/ir/Program.cpp
+    winc/core/middleend/ir/Value.cpp
+    winc/core/middleend/lowering/LoweringEngine.cpp
     winc/core/utils/print/print.cpp
 )
 

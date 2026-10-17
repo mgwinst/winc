@@ -1,5 +1,6 @@
 #include <print>
 #include <format>
+#include <iostream>
 
 #include "print.hpp"
 #include "utils/casting.hpp"
@@ -79,7 +80,7 @@ std::string type_to_str(Type* type)
 }
 
 
-// ******************** AST PRINTING ********************
+// ******************** AST printing ********************
 
 
 std::string node_to_str(ASTNode* node, std::string indent = "")
@@ -300,4 +301,232 @@ std::string node_to_str(ASTNode* node, std::string indent = "")
 void print(AST& ast)
 {
     std::println("{}", node_to_str(ast.root_));
+}
+
+
+// ******************** IR printing ********************
+
+
+std::string get_target_list_str(Branch* branch)
+{
+    std::string target_label_list{};
+    for (auto* target : branch->targets()) {
+    target_label_list += std::format("label {}", target->name_);
+    if (target != branch->targets().back())
+        target_label_list += ", ";
+    }
+
+    return target_label_list;
+}
+
+std::string get_argument_list_str(Call* call)
+{
+    std::string args_list_str{};
+    for (auto* arg : call->operands_ | std::views::drop(1)) {
+        args_list_str += std::format("{}", arg->name_);
+        if (arg != call->operands_.back())
+            args_list_str += ", ";
+    }
+
+    return args_list_str;
+}
+
+std::string get_phi_operands_str(Phi* phi)
+{
+    std::string phi_operands_str{};
+    for (auto [value, block] : phi->operands_) {
+        phi_operands_str += std::format("[{}, {}]", value->name_, block->name_);
+        if (value != phi->operands_.back().first) {
+            phi_operands_str += ", ";
+        }
+    }
+
+    return phi_operands_str;
+}
+
+std::string ir_value_to_str(Value* value)
+{
+    switch (value->kind_) {
+        case ValueKind::Alloca: {
+            auto* inst = cast<Alloca>(value);
+            return std::format("{} = alloca", inst->name_); // x = alloca int32
+        }
+
+        case ValueKind::Load: {
+            auto* inst = cast<Load>(value);
+            return std::format("{} = load {}", inst->name_, inst->operands_[0]->name_);
+        }
+
+        case ValueKind::Store: {
+            auto* inst = cast<Store>(value);
+            return std::format("store {}, {}", inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Add: {
+            auto* inst = cast<Add>(value);
+            return std::format("{} = add {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Sub: {
+            auto* inst = cast<Sub>(value);
+            return std::format("{} = sub {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Mul: {
+            auto* inst = cast<Mul>(value);
+            return std::format("{} = mul {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Div: {
+            auto* inst = cast<Div>(value);
+            return std::format("{} = div {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Mod: {
+            auto* inst = cast<Mod>(value);
+            return std::format("{} = mod {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Eq: {
+            auto* inst = cast<Eq>(value);
+            return std::format("{} = eq {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Ne: {
+            auto* inst = cast<Ne>(value);
+            return std::format("{} = ne {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Not: {
+            auto* inst = cast<Not>(value);
+            return std::format("{} = not {}", inst->name_, inst->operands_[0]->name_);
+        }
+
+        case ValueKind::Slt: {
+            auto* inst = cast<Slt>(value);
+            return std::format("{} = slt {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Sle: {
+            auto* inst = cast<Sle>(value);
+            return std::format("{} = sle {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Ult: {
+            auto* inst = cast<Ult>(value);
+            return std::format("{} = Ult {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Ule: {
+            auto* inst = cast<Ule>(value);
+            return std::format("{} = Ule {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Shl: {
+            auto* inst = cast<Shl>(value);
+            return std::format("{} = shl {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Ashr: {
+            auto* inst = cast<Ashr>(value);
+            return std::format("{} = ashr {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Lshr: {
+            auto* inst = cast<Lshr>(value);
+            return std::format("{} = lshr {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        }
+
+        case ValueKind::Call: {
+            auto* inst = cast<Call>(value);
+
+            auto* func = cast<Function>(inst->operands_[0]);
+
+            if (func->return_value_)
+                return std::format("{} = call @{}({})", inst->name_, func->name_, get_argument_list_str(inst));
+
+            return std::format("call @{}({})", func->name_, get_argument_list_str(inst));
+        }
+
+        case ValueKind::Return: {
+            auto* inst = cast<Return>(value);
+
+            if (inst->operands_.empty())
+                return "ret";
+
+            return std::format("ret {}", inst->operands_[0]->name_);
+        }
+
+        case ValueKind::Branch: {
+            auto* inst = cast<Branch>(value);
+
+            return inst->is_conditional() ?
+                std::format("br {}, label {}, label {}", inst->condition()->name_, inst->targets()[0]->name_, inst->targets()[1]->name_) :
+                std::format("br label {}", inst->operands_[0]->name_);
+        }
+
+        case ValueKind::Phi: {
+            auto* inst = cast<Phi>(value);
+            return std::format("{} = φ {}", inst->name_, get_phi_operands_str(inst));
+        }
+
+        case ValueKind::PtrAdd: {
+            auto* inst = cast<PtrAdd>(value);
+            return std::format("{} = ptradd {}, {}", inst->name_, inst->operands_[0]->name_, inst->operands_[1]->name_);
+        };
+
+        default: {
+            fatal_error("ir_value_to_str()");
+        }
+    }
+}
+
+std::string get_arg_list_str(const std::unique_ptr<Function>& function)
+{
+    std::string arg_list;
+
+    for (auto& arg : function->args_) {
+        arg_list += arg->name_ + ": " + type_to_str(arg->type_);
+        if (arg != function->args_.back()) {
+            arg_list += ", ";
+        }
+    }
+
+    return arg_list;
+}
+
+std::string get_pred_list_str(const std::unique_ptr<BasicBlock>& block)
+{
+    std::string pred_list;
+
+    if (!block->predecessors().empty()) {
+        pred_list = "preds: [";
+        for (auto pred : block->predecessors()) {
+            pred_list += pred->name_;
+            if (pred != block->predecessors().back()) {
+                pred_list += ", ";
+            }
+        }
+        pred_list += ']';
+    }
+
+    return pred_list;
+}
+
+void print(IRProgram& program)
+{
+    for (const auto& function : program.functions_) {
+        std::print("define @{}({}) -> ({}) ", function->name_, get_arg_list_str(function), type_to_str(cast<FunctionType>(function->type_)->return_type_));
+        std::cout << "{\n";
+        for (const auto& block : function->blocks_) {
+            std::println("{:<30}{}", block->name_ + ":", get_pred_list_str(block));
+            for (const auto& inst : block->instructions_) {
+                std::println("  {}", ir_value_to_str(inst.get()));
+            }
+            if (block != function->blocks_.back()) {
+                std::println();
+            }
+        }
+        std::cout << "}\n\n";
+    }
 }

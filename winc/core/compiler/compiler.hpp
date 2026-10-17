@@ -5,6 +5,7 @@
 #include "compiler/compile_options.hpp"
 #include "frontend/translation_unit.hpp"
 #include "frontend/ast/ast.hpp"
+#include "middleend/ir/IR.hpp"
 
 class Compiler
 {
@@ -14,6 +15,6 @@ public:
 private:
     AST parse(TranslationUnit& translation_unit);
     void analyze(TranslationUnit& translation_unit, AST& ast);
-    // IRProgram lower(TranslationUnit& translation_unit, AST& ast);
-    // void optimize(IRProgram& program);
+    IRProgram lower(TranslationUnit& translation_unit, AST& ast);
+    void optimize(IRProgram& program);
 };
