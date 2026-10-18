@@ -362,6 +362,9 @@ Value* LoweringEngine::lower(ASTNode* node)
         auto* base_ptr = get_value(base);
 
         auto* index = lower(expr->index_);
+        if (load_required(expr->index_)) {
+            index = builder_.create<Load>(index);
+        }
 
         return builder_.create<PtrAdd>(base_ptr, index);
     }
