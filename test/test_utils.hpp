@@ -2,6 +2,7 @@
 
 #include "frontend/parser/parser.hpp"
 #include "frontend/translation_unit.hpp"
+#include "middleend/ir/IRBuilder.hpp"
 #include "utils/casting.hpp"
 
 // check source location for one of the examples

@@ -47,6 +47,7 @@ Value* LoweringEngine::lower(ASTNode* node)
                 init_value = builder_.create<Load>(init_value);
             }
 
+            // no direct store on initializer list expression
             if (isa<InitListExpr>(var->init_)) {
                 return nullptr;
             }

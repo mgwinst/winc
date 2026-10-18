@@ -19,9 +19,15 @@ add_library(winc_lib STATIC
     winc/core/middleend/ir/BasicBlock.cpp
     winc/core/middleend/ir/Function.cpp
     winc/core/middleend/ir/Instruction.cpp
-    winc/core/middleend/ir/Program.cpp
+    winc/core/middleend/ir/IRProgram.cpp
     winc/core/middleend/ir/Value.cpp
     winc/core/middleend/lowering/LoweringEngine.cpp
+    winc/core/analysis/escape.cpp
+    winc/core/analysis/dominator.cpp
+    winc/core/middleend/transforms/trivial_dce.cpp
+    winc/core/middleend/transforms/dse.cpp
+    winc/core/middleend/transforms/cleanup_cfg.cpp
+    winc/core/middleend/transforms/mem2reg.cpp
     winc/core/utils/print/print.cpp
 )
 

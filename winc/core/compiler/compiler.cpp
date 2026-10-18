@@ -4,6 +4,7 @@
 #include "frontend/parser/parser.hpp"
 #include "frontend/sema/analyzer.hpp"
 #include "middleend/lowering/LoweringEngine.hpp"
+#include "middleend/transforms/TransformPassManager.hpp"
 #include "utils/temp_ir_naming.hpp"
 #include "utils/print/print.hpp"
 
@@ -25,10 +26,10 @@ void Compiler::run(std::string_view input_file, const CompileOptions& options)
         print(ir_program);
     }
 
-    // optimize(ir_program);
+    optimize(ir_program);
 
     if (options.flags_ & DUMP_OPT) {
-        // print(ir_program);
+        print(ir_program);
     }
 
 
@@ -56,6 +57,13 @@ IRProgram Compiler::lower(TranslationUnit& translation_unit, AST& ast)
 
 void Compiler::optimize(IRProgram& program)
 {
-    // transform()
-    // name_values()
+    TransformPassManager{{
+        Transforms::TRIVIAL_DCE,
+        Transforms::DSE,
+        Transforms::CFG_CLEANUP,
+        Transforms::MEM2REG
+        // Transforms::TRIVIAL_DCE
+    }}.run(program);
+
+    name_values(program);
 }

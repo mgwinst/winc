@@ -1,4 +1,4 @@
-#include "test/test_utilities.hpp"
+#include "test_utils.hpp"
 
 TEST_CASE("instruction def-use list")
 {
