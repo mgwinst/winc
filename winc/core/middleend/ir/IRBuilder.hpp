@@ -8,7 +8,7 @@ struct IRBuilder
     Function* current_function_;
     BasicBlock* current_block_;
 
-    IRBuilder(IRProgram* program = nullptr) :
+    IRBuilder(IRProgram* program) :
         program_{ program },
         current_function_{ nullptr },
         current_block_{ nullptr } {}

@@ -1,11 +1,12 @@
-#include "test/test_utilities.hpp"
+#include "test_utils.hpp"
 
 TEST_CASE("BasicBlock::terminator() returns the last instruction in the block and must be branch/ret instruction")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* block1 = builder.create<BasicBlock>();
-    
+
     auto* ret = builder.create<Return>();
 
     block1->insert(ret);
@@ -15,11 +16,12 @@ TEST_CASE("BasicBlock::terminator() returns the last instruction in the block an
 
 TEST_CASE("unconditional branch instruction adds successor to BasicBlock")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* block1 = builder.create<BasicBlock>();
     auto* block2 = builder.create<BasicBlock>();
-    
+
     auto* branch = builder.create<Branch>(block2);
 
     block1->insert(branch);
@@ -33,12 +35,13 @@ TEST_CASE("unconditional branch instruction adds successor to BasicBlock")
 
 TEST_CASE("conditional branch instruction adds all successors to block")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* block1 = builder.create<BasicBlock>();
     auto* block2 = builder.create<BasicBlock>();
     auto* block3 = builder.create<BasicBlock>();
-    
+
     auto* branch = builder.create<Branch>(nullptr, block2, block3);
 
     block1->insert(branch);
@@ -56,7 +59,8 @@ TEST_CASE("conditional branch instruction adds all successors to block")
 
 TEST_CASE("delete successor block converts conditional branch instruction to unconditional")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* block1 = builder.create<BasicBlock>();
     auto* block2 = builder.create<BasicBlock>();
@@ -80,7 +84,8 @@ TEST_CASE("delete successor block converts conditional branch instruction to unc
 
 TEST_CASE("delete successor block deletes branch instruction from predecessor")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* block1 = builder.create<BasicBlock>();
     auto* block2 = builder.create<BasicBlock>();

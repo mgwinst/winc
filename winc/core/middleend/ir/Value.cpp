@@ -18,16 +18,27 @@ void Value::add_use(Value* value)
 
 void Value::replace_uses_with(Value* value)
 {
-    if (value && value != this) {
-        // when user is a phi the cast will fail (make phi inherit from Instruction)
-        for (auto* user : static_cast_view<Instruction>(this->users_)) {
-            for (auto& operand : user->operands_) {
+    if (!value || value == this) {
+        return;
+    }
+
+    for (auto* user : users_) {
+        if (auto* phi = dyn_cast<Phi>(user)) {
+            for (auto& operand : phi->operands_) {
+                if (operand.first == this) {
+                    operand.first = value;
+                }
+            }
+        } else {
+            auto* inst = static_cast<Instruction*>(user);
+            for (auto& operand : inst->operands_) {
                 if (operand == this) {
                     operand = value;
                 }
             }
-            value->users_.push_back(user);
         }
+
+        value->users_.push_back(user);
     }
 
     users_.clear();

@@ -1,8 +1,10 @@
+#include "middleend/ir/IR.hpp"
 #include "test_utils.hpp"
 
 TEST_CASE("instruction def-use list")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* type = new IntegerType{32, true};
     auto* alloca = builder.create<Alloca>(type, "a");
@@ -10,6 +12,7 @@ TEST_CASE("instruction def-use list")
     auto* num = builder.create<Const>(42);
 
     auto* store = builder.create<Store>(alloca, num);
+
 
     SUBCASE("instruction creation updates def-use chain")
     {
@@ -31,7 +34,8 @@ TEST_CASE("instruction def-use list")
 
 TEST_CASE("replace_uses_with() modifies graph properly updates all uses with new value")
 {
-    IRBuilder builder{};
+    IRProgram program;
+    IRBuilder builder{&program};
 
     auto* type1 = new IntegerType{32, true};
     auto* alloca1 = builder.create<Alloca>(type1, "a");

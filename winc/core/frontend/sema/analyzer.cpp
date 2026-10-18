@@ -283,6 +283,8 @@ Type* SemanticAnalyzer::check_type(ASTNode* node)
             }
             else
             {
+                // handle x: uint = 0; (uint != int)
+
                 auto* init_type = check_type(var->init_);
                 if (init_type != nullptr)
                 {
