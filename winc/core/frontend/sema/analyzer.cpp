@@ -757,6 +757,7 @@ void SemanticAnalyzer::desugar(ASTNode*& node)
     {
         desugar(for_stmt->body_);
         node = for_to_while(ast_, for_stmt);
+        desugar(node); // fix the unresolved update expression if (++/--) by desugaring the just created while node
     }
 
     // ++a -> a = a + 1
