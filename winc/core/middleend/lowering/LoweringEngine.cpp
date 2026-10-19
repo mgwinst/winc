@@ -375,7 +375,13 @@ Value* LoweringEngine::lower(ASTNode* node)
         for (auto i = 0uz; i < init_list_expr->init_values_.size(); ++i) {
             auto* index = builder_.create<Const>(static_cast<int64_t>(i));
             auto* ptr = builder_.create<PtrAdd>(base_ptr, index);
-            builder_.create<Store>(ptr, lower(init_list_expr->init_values_[i]));
+
+            auto* init_value = lower(init_list_expr->init_values_[i]);
+            if (load_required(init_list_expr->init_values_[i])) {
+                init_value = builder_.create<Load>(init_value);
+            }
+
+            builder_.create<Store>(ptr, init_value);
         }
 
         return nullptr;
