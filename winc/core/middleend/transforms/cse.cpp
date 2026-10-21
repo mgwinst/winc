@@ -24,26 +24,22 @@ void cse(BasicBlock* block, ScopedTable& table, DominatorTree& dt, bool changed)
 {
     table.push_scope();
 
-    std::vector<Value*> dead;
-
-    for (auto& inst : block->instructions_) {
-        if (!is_pure(inst)) {
+    for (auto it = block->instructions_.begin(); it != block->instructions_.end(); ) {
+        if (!is_pure(*it)) {
+            ++it;
             continue;
         }
 
-        auto key = hash(inst);
+        auto key = hash(*it);
         if (auto existing = table.lookup(key)) {
-            inst->replace_uses_with(*existing);
-            dead.push_back(inst.get());
+            (*it)->replace_uses_with(*existing);
+            it = block->instructions_.erase(it);
             changed = true;
         } else {
-            table.emplace(key, inst.get());
+            table.emplace(key, (*it).get());
+            ++it;
         }
     }
-
-    block->instructions_.remove_if([&dead](std::unique_ptr<Value>& inst) {
-        return std::ranges::contains(dead, inst.get());
-    });
 
     for (auto* child : dt[block]) {
         cse(child, table, dt, changed);
