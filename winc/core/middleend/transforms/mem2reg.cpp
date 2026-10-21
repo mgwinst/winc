@@ -3,7 +3,6 @@
 
 #include "analysis/dominator.hpp"
 #include "analysis/escape.hpp"
-#include "middleend/transforms/helpers.hpp"
 #include "utils/casting.hpp"
 
 /*
@@ -24,7 +23,7 @@ std::queue<BasicBlock*> def_blocks(Function* function, Alloca* alloca)
     for (auto& block : function->blocks_) {
         for (auto& inst : block->instructions_) {
             if (auto* store = dyn_cast<Store>(inst)) {
-                if (get_alloca_operand(store) == alloca) {
+                if (store->operands_[0] == alloca) {
                     def_blocks.push(block.get());
                     break;
                 }
@@ -35,9 +34,9 @@ std::queue<BasicBlock*> def_blocks(Function* function, Alloca* alloca)
     return def_blocks;
 }
 
-void rename(BasicBlock* block, std::unordered_map<Alloca*, std::stack<Value*>>& def_stack, DominatorTree& dt)
+void rename(BasicBlock* block, std::unordered_map<Value*, std::stack<Value*>>& def_stack, DominatorTree& dt)
 {
-    std::unordered_map<Alloca*, std::size_t> sizes;
+    std::unordered_map<Value*, std::size_t> sizes;
     for (auto [alloca, stack] : def_stack) {
         sizes[alloca] = stack.size();
     }
@@ -50,16 +49,18 @@ void rename(BasicBlock* block, std::unordered_map<Alloca*, std::stack<Value*>>& 
         }
 
         else if (auto* load = dyn_cast<Load>(inst)) {
-            if (def_stack[get_alloca_operand(load)].size() == 0)
-                continue;
-            auto* v = def_stack[get_alloca_operand(load)].top();
-            inst->replace_uses_with(v);
-            to_remove.push_back(load);
+            if (auto it = def_stack.find(load->operands_[0]); it != def_stack.end()) {
+                auto* v = it->second.top();
+                inst->replace_uses_with(v);
+                to_remove.push_back(load);
+            }
         }
 
         else if (auto* store = dyn_cast<Store>(inst)) {
-            def_stack[get_alloca_operand(store)].push(store->operands_[1]);
-            to_remove.push_back(store);
+            if (auto it = def_stack.find(store->operands_[0]); it != def_stack.end()) {
+                it->second.push(store->operands_[1]);
+                to_remove.push_back(store);
+            }
         }
     }
 
@@ -131,7 +132,7 @@ void promote_memory_to_register(Function* function)
         }
     }
 
-    std::unordered_map<Alloca*, std::stack<Value*>> def_stack;
+    std::unordered_map<Value*, std::stack<Value*>> def_stack; // {alloca : [...]}
     for (auto* alloca : promotable_allocas) {
         def_stack.emplace(alloca, std::stack<Value*>{});
     }

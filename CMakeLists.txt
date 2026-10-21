@@ -28,6 +28,7 @@ add_library(winc_lib STATIC
     winc/core/middleend/transforms/dse.cpp
     winc/core/middleend/transforms/cleanup_cfg.cpp
     winc/core/middleend/transforms/mem2reg.cpp
+    winc/core/middleend/transforms/cse.cpp
     winc/core/utils/print/print.cpp
 )
 

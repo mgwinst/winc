@@ -6,6 +6,7 @@
 #include "middleend/transforms/dse.hpp"
 #include "middleend/transforms/cleanup_cfg.hpp"
 #include "middleend/transforms/mem2reg.hpp"
+#include "middleend/transforms/cse.hpp"
 #include "utils/fatal.hpp"
 
 using PassCallback = void(*)(IRProgram&);
@@ -18,7 +19,8 @@ enum class Transforms
     DSE,
     CONST_FOLD,
     CFG_CLEANUP,
-    MEM2REG
+    MEM2REG,
+    CSE
 };
 
 class TransformPassManager
@@ -42,6 +44,10 @@ public:
 
                 case Transforms::MEM2REG:
                     add_pass(mem2reg);
+                    break;
+
+                case Transforms::CSE:
+                    add_pass(cse);
                     break;
 
                 default:

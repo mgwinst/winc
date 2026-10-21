@@ -31,8 +31,6 @@ void Compiler::run(std::string_view input_file, const CompileOptions& options)
     if (options.flags_ & DUMP_OPT) {
         print(ir_program);
     }
-
-
 }
 
 AST Compiler::parse(TranslationUnit& translation_unit)
@@ -61,7 +59,8 @@ void Compiler::optimize(IRProgram& program)
         Transforms::TRIVIAL_DCE,
         Transforms::DSE,
         Transforms::CFG_CLEANUP,
-        Transforms::MEM2REG
+        Transforms::MEM2REG,
+        Transforms::CSE
         // Transforms::TRIVIAL_DCE
     }}.run(program);
 

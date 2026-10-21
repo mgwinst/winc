@@ -4,6 +4,7 @@
 #include "LoweringEngine.hpp"
 #include "frontend/ast/ast.hpp"
 #include "frontend/sema/helpers.hpp"
+#include "middleend/ir/IR.hpp"
 #include "utils/casting.hpp"
 #include "utils/enums.hpp"
 #include "utils/fatal.hpp"
@@ -43,13 +44,13 @@ Value* LoweringEngine::lower(ASTNode* node)
         } else {
             auto* init_value = lower(var->init_);
 
-            if (load_required(var->init_)) {
-                init_value = builder_.create<Load>(init_value);
-            }
-
             // no direct store on initializer list expression
             if (isa<InitListExpr>(var->init_)) {
                 return nullptr;
+            }
+
+            if (load_required(var->init_)) {
+                init_value = builder_.create<Load>(init_value);
             }
 
             return builder_.create<Store>(alloca, init_value);
@@ -351,6 +352,9 @@ Value* LoweringEngine::lower(ASTNode* node)
         auto* index = builder_.create<Const>(static_cast<int64_t>(field_index));
 
         auto* base_ptr = get_value(base);
+        if (isa<PointerType>(base->symbol_->type_)) {
+            base_ptr = builder_.create<Load>(base_ptr);
+        }
 
         return builder_.create<PtrAdd>(base_ptr, index);
     }
@@ -358,8 +362,10 @@ Value* LoweringEngine::lower(ASTNode* node)
     else if (auto* expr = dyn_cast<ArraySubscriptExpr>(node)) {
         auto* base = cast<ReferenceExpr>(expr->base_);
 
-        // assert type is ptr or record
         auto* base_ptr = get_value(base);
+        if (isa<PointerType>(base->symbol_->type_)) {
+            base_ptr = builder_.create<Load>(base_ptr);
+        }
 
         auto* index = lower(expr->index_);
         if (load_required(expr->index_)) {
