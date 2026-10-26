@@ -2,7 +2,7 @@
 
 #define REVERSE (true)
 
-auto compute_rpo_index_map(const std::vector<BasicBlock*>& blocks) 
+auto compute_rpo_index_map(const std::vector<BasicBlock*>& blocks)
 {
     std::unordered_map<BasicBlock*, uint64_t> rpo_index;
 
@@ -16,13 +16,13 @@ auto compute_rpo_index_map(const std::vector<BasicBlock*>& blocks)
 auto compute_immediate_dominators(Function* function)
 {
     std::unordered_map<BasicBlock*, BasicBlock*> idom;
-    
+
     auto blocks = post_order(function, REVERSE);
 
     auto rpo_index = compute_rpo_index_map(blocks);
 
     auto* entry = function->get_entry_block();
-    
+
     idom[entry] = entry;
 
     for (auto* b : blocks) {
@@ -49,7 +49,7 @@ auto compute_immediate_dominators(Function* function)
         for (auto i = 0uz; i < blocks.size(); ++i) {
             BasicBlock* b = blocks[i];
 
-            if (b == entry) 
+            if (b == entry)
                 continue;
 
             BasicBlock* new_idom = nullptr;
@@ -84,7 +84,7 @@ DominanceFrontier::DominanceFrontier(Function* function)
             for (auto* p : b->predecessors()) {
                 auto* runner = p;
                 while (runner != idom[b]) {
-                    frontier[runner].insert(b);
+                    frontier_[runner].insert(b);
                     runner = idom[runner];
                 }
             }
@@ -94,25 +94,42 @@ DominanceFrontier::DominanceFrontier(Function* function)
 
 std::unordered_set<BasicBlock*>& DominanceFrontier::operator[](BasicBlock* block)
 {
-    return frontier[block];
+    return frontier_[block];
 }
 
 DominatorTree::DominatorTree(Function* function)
 {
-    auto blocks = post_order(function, REVERSE);  
+    auto blocks = post_order(function, REVERSE);
 
-    auto idom = compute_immediate_dominators(function);
+    idom_ = compute_immediate_dominators(function);
 
     for (auto* b : blocks) {
-        auto* p = idom[b];
+        auto* p = idom_[b];
 
         if (p != b) {
-            tree[p].insert(b);
+            tree_[p].insert(b);
         }
     }
 }
 
 std::unordered_set<BasicBlock*>& DominatorTree::operator[](BasicBlock* block)
 {
-    return tree[block];
+    return tree_[block];
+}
+
+bool DominatorTree::dominates(BasicBlock* b1, BasicBlock* b2)
+{
+    if (b1 == b2) {
+        return true;
+    }
+
+    auto* runner = b2;
+    while (runner != idom_[runner]) {
+        if (runner == b1) {
+            return true;
+        }
+        runner = idom_[runner];
+    }
+
+    return false;
 }

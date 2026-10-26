@@ -128,7 +128,9 @@ void promote_memory_to_register(Function* function)
         }
 
         for (auto* block : phi_blocks) {
-            block->instructions_.emplace_front(new Phi{alloca});
+            auto* phi = new Phi{alloca};
+            block->instructions_.emplace_front(phi);
+            phi->parent_ = block;
         }
     }
 

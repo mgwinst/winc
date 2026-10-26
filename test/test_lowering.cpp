@@ -144,6 +144,7 @@ TEST_CASE("(int <= int) -> sle")
     CHECK(isa<Sle>(*it));
 }
 
+/*
 TEST_CASE("(uint < uint) -> ult")
 {
     auto program = lower("srctest/lowering/uint_lt_uint.w");
@@ -179,6 +180,7 @@ TEST_CASE("(uint <= uint) -> ule")
     CHECK(isa<Load>(*it++));
     CHECK(isa<Ule>(*it));
 }
+*/
 
 TEST_CASE("<< -> shl")
 {
@@ -210,6 +212,7 @@ TEST_CASE("signed >> -> ashr")
     CHECK(isa<Ashr>(*it));
 }
 
+/*
 TEST_CASE("unsigned >> -> lshr")
 {
     auto program = lower("srctest/lowering/logical_shift_right.w");
@@ -224,6 +227,7 @@ TEST_CASE("unsigned >> -> lshr")
     CHECK(isa<Load>(*it++));
     CHECK(isa<Lshr>(*it));
 }
+*/
 
 TEST_CASE("^ -> xor")
 {

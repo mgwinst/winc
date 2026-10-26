@@ -60,7 +60,8 @@ void Compiler::optimize(IRProgram& program)
         Transforms::DSE,
         Transforms::CFG_CLEANUP,
         Transforms::MEM2REG,
-        Transforms::CSE
+        Transforms::CSE,
+        Transforms::LICM
         // Transforms::TRIVIAL_DCE
     }}.run(program);
 

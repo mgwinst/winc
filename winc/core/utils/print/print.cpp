@@ -476,6 +476,7 @@ std::string ir_value_to_str(Value* value)
         };
 
         default: {
+            std::println("{}", (int)value->kind_);
             fatal_error("ir_value_to_str()");
         }
     }

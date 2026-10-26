@@ -80,11 +80,11 @@ void merge_linear_blocks(std::unique_ptr<Function>& function, bool& changed)
             ++it;
             continue;
         }
-        
+
         if (collapsible(block)) {
             auto* dead_block = combine_with_successor(block);
             dead.insert(dead_block);
-            changed = true; 
+            changed = true;
         }
 
         ++it;
