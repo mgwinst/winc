@@ -101,7 +101,7 @@ auto find_invariants(const std::unordered_set<BasicBlock*>& loop)
                     auto* inst = static_cast<Instruction*>(instruction.get());
 
                     auto is_invariant = std::ranges::all_of(inst->operands_, [&](auto* operand) {
-                        return isa<Const>(operand) || !loop.contains(cast<BasicBlock>(operand->parent_)) || invariants.contains(operand); });
+                        return !loop.contains(dyn_cast<BasicBlock>(operand->parent_)) || invariants.contains(operand); });
 
                     if (is_invariant) {
                         invariants.insert(inst);
