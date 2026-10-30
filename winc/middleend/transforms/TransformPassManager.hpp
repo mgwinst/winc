@@ -7,7 +7,6 @@
 #include "middleend/transforms/cleanup_cfg.hpp"
 #include "middleend/transforms/mem2reg.hpp"
 #include "middleend/transforms/cse.hpp"
-#include "middleend/transforms/licm.hpp"
 
 #include "utils/fatal.hpp"
 
@@ -51,10 +50,6 @@ public:
 
                 case Transforms::CSE:
                     add_pass(cse);
-                    break;
-
-                case Transforms::LICM:
-                    add_pass(licm);
                     break;
 
                 default:

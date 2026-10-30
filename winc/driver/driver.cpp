@@ -96,7 +96,7 @@ void Driver::compile()
 
     for (auto file : input_files_)
     {
-        threads.emplace_back([this, &file] { Compiler{}.run(file, compile_options_); });
+        threads.emplace_back([&] { Compiler{}.run(file, compile_options_); });
     }
 }
 

@@ -2,7 +2,7 @@
 
 clang++ -std=c++23 \
     -I../ \
-    -I../winc/core \
+    -I../winc \
     -I/opt/homebrew/include \
     test_main.cpp \
     test_lexer.cpp \

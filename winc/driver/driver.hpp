@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "compiler/compile_options.hpp"
+#include "compiler/options.hpp"
 
 // Compilation orchestrator (target, options, pipeline, toolchain)
 class Driver

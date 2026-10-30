@@ -4,8 +4,11 @@
 #include "analysis/dominator.hpp"
 #include "middleend/transforms/cse.hpp"
 #include "middleend/ir/IR.hpp"
-#include "middleend/transforms/helpers.hpp"
 #include "utils/structures/ScopedHashTable.hpp"
+
+bool is_pure(auto& value) {
+    return value->kind_ >= ValueKind::Add && value->kind_ <= ValueKind::PtrAdd;
+}
 
 uint64_t hash(auto& value)
 {
@@ -15,7 +18,9 @@ uint64_t hash(auto& value)
     return std::ranges::fold_left(hashed, 0ull, std::bit_xor{});
 }
 
-void cse(BasicBlock* block, ScopedHashTable<uint64_t, Value*>& table, DominatorTree& dt, bool& changed)
+using ScopedTable = ScopedHashTable<uint64_t, Value*>;
+
+void cse(BasicBlock* block, ScopedTable& table, DominatorTree& dt, bool& changed)
 {
     table.push_scope();
 
@@ -45,7 +50,7 @@ void cse(BasicBlock* block, ScopedHashTable<uint64_t, Value*>& table, DominatorT
 
 void cse(IRProgram& program)
 {
-    ScopedHashTable<uint64_t, Value*> table;
+    ScopedTable table;
 
     for (auto& function : program.functions_) {
         DominatorTree dt{function.get()};

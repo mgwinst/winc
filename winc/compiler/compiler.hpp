@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include "compiler/compile_options.hpp"
+#include "compiler/options.hpp"
 #include "frontend/translation_unit.hpp"
 #include "frontend/ast/ast.hpp"
 #include "middleend/ir/IR.hpp"

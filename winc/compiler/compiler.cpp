@@ -1,5 +1,5 @@
 #include "compiler/compiler.hpp"
-#include "compiler/compile_options.hpp"
+#include "compiler/options.hpp"
 #include "frontend/translation_unit.hpp"
 #include "frontend/parser/parser.hpp"
 #include "frontend/sema/analyzer.hpp"
@@ -60,8 +60,7 @@ void Compiler::optimize(IRProgram& program)
         Transforms::DSE,
         Transforms::CFG_CLEANUP,
         Transforms::MEM2REG,
-        Transforms::CSE,
-        Transforms::LICM
+        Transforms::CSE
         // Transforms::TRIVIAL_DCE
     }}.run(program);
 

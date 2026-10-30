@@ -236,7 +236,7 @@ struct Branch : Instruction
 struct Phi : Value
 {
     Alloca* alloca_;
-    std::vector<std::pair<Value*, BasicBlock*>> operands_;
+    small_vector<std::pair<Value*, BasicBlock*>, 2> operands_;
 
     Phi(Alloca* alloca) :
         Value(ValueKind::Phi),
@@ -285,7 +285,7 @@ struct Argument : Value
 struct Function : Value
 {
     std::list<std::unique_ptr<Argument>> args_;
-    std::list<std::unique_ptr<BasicBlock>> blocks_; // unordered
+    std::list<std::unique_ptr<BasicBlock>> blocks_;
 
     // memory leak
     Value* return_value_ = nullptr;
