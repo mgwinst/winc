@@ -11,12 +11,14 @@ inline bool is_nameable(Value* value)
 inline void name_values(IRProgram& program)
 {
     for (auto& function : program.functions_) {
+        auto block_count = 0;
         auto value_count = 0;
-        for (auto& block : function->blocks_) {
+        for (auto* block : post_order(function.get(), true)) {
+            block->name_ = std::format("bb.{}", block_count++);
             for (auto& inst : block->instructions_) {
                 if (is_nameable(inst.get())) {
                     if (!isa<Const>(inst))
-                        inst->name_ = "%" + std::to_string(value_count++);
+                        inst->name_ = std::format("%{}", value_count++);
                     else
                         inst->name_ = std::to_string(value_count++);
                 }

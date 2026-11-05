@@ -63,8 +63,8 @@ struct Value
     ValueKind kind_;
     Type* type_;
     std::string name_;
-    small_vector<Value*, 4> users_;
     Value* parent_;
+    small_vector<Value*, 4> users_;
 
     Value(ValueKind kind, Type* type = nullptr, std::string_view name = "", Value* parent = nullptr);
 
@@ -257,7 +257,7 @@ struct BasicBlock : Value
 {
     std::list<std::unique_ptr<Value>> instructions_;
 
-    BasicBlock(std::string_view name = "");
+    BasicBlock();
 
     ~BasicBlock() override;
 
@@ -265,7 +265,7 @@ struct BasicBlock : Value
     T* insert(T* value)
     {
         value->parent_ = this;
-        instructions_.push_back(std::unique_ptr<Value>{ value });
+        instructions_.emplace_back(value);
         return value;
     }
 

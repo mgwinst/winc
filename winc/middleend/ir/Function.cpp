@@ -35,20 +35,20 @@ BasicBlock* Function::get_entry_block()
 {
     assert(!blocks_.empty());
     auto* entry = blocks_.front().get();
-    assert(entry->name_ == "entry" && entry->predecessors().empty());
+    assert(entry->predecessors().empty());
     return entry;
 }
 
 BasicBlock* Function::insert(BasicBlock* block)
 {
     block->parent_ = this;
-    blocks_.push_back(std::unique_ptr<BasicBlock>{ block });
+    blocks_.emplace_back(block);
     return block;
 }
 
 Argument* Function::insert(Argument* arg)
 {
     arg->parent_ = this;
-    args_.push_back(std::unique_ptr<Argument>{ arg });
+    args_.emplace_back(arg);
     return arg;
 }

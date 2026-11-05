@@ -60,7 +60,11 @@ void Compiler::optimize(IRProgram& program)
         Transforms::DSE,
         Transforms::CFG_CLEANUP,
         Transforms::MEM2REG,
+<<<<<<< HEAD:winc/compiler/compiler.cpp
         Transforms::CSE
+=======
+        Transforms::CSE,
+>>>>>>> cee3661 (remove licm for now will come back to this soon and changed basic block naming -> bb.#):winc/core/compiler/compiler.cpp
         // Transforms::TRIVIAL_DCE
     }}.run(program);
 

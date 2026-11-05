@@ -2,6 +2,6 @@
 
 Function* IRProgram::insert(Function* function)
 {
-    functions_.push_back(std::unique_ptr<Function>(function));
+    functions_.emplace_back(function);
     return function;
 }

@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Boost REQUIRED)
 
 add_library(winc_lib STATIC
+<<<<<<< HEAD
     winc/driver/driver.cpp
     winc/compiler/compiler.cpp
     winc/frontend/error/diagnostics.cpp
@@ -30,6 +31,29 @@ add_library(winc_lib STATIC
     winc/middleend/transforms/mem2reg.cpp
     winc/middleend/transforms/cse.cpp
     winc/utils/print/print.cpp
+=======
+    winc/core/driver/driver.cpp
+    winc/core/compiler/compiler.cpp
+    winc/core/frontend/error/diagnostics.cpp
+    winc/core/frontend/lexer/lexer.cpp
+    winc/core/frontend/parser/parser.cpp
+    winc/core/frontend/sema/types/type_table.cpp
+    winc/core/frontend/sema/analyzer.cpp
+    winc/core/middleend/ir/BasicBlock.cpp
+    winc/core/middleend/ir/Function.cpp
+    winc/core/middleend/ir/Instruction.cpp
+    winc/core/middleend/ir/IRProgram.cpp
+    winc/core/middleend/ir/Value.cpp
+    winc/core/middleend/lowering/LoweringEngine.cpp
+    winc/core/analysis/escape.cpp
+    winc/core/analysis/dominator.cpp
+    winc/core/middleend/transforms/trivial_dce.cpp
+    winc/core/middleend/transforms/dse.cpp
+    winc/core/middleend/transforms/cleanup_cfg.cpp
+    winc/core/middleend/transforms/mem2reg.cpp
+    winc/core/middleend/transforms/cse.cpp
+    winc/core/utils/print/print.cpp
+>>>>>>> cee3661 (remove licm for now will come back to this soon and changed basic block naming -> bb.#)
 )
 
 target_include_directories(winc_lib PUBLIC

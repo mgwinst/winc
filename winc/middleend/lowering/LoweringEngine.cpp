@@ -71,12 +71,12 @@ Value* LoweringEngine::lower(ASTNode* node)
         function_map_[func->symbol_->identifier_] = function;
         set_current_function(function);
 
-        auto* entry = builder_.create<BasicBlock>("entry");
+        auto* entry = builder_.create<BasicBlock>();
         set_current_block(entry);
 
         auto* return_type = cast<FunctionType>(func->symbol_->type_)->return_type_;
 
-        current_function()->return_block_ = builder_.create<BasicBlock>("exit");
+        current_function()->return_block_ = builder_.create<BasicBlock>();
 
         if (return_type == translation_unit_.type_table_.builtin_types_["void"]) {
             set_current_block(current_function()->return_block_);
@@ -137,8 +137,8 @@ Value* LoweringEngine::lower(ASTNode* node)
         auto* header_block = current_block();
         auto* cond = lower(if_stmt->cond_);
 
-        auto* if_then_block = builder_.create<BasicBlock>("if.then");
-        auto* if_end_block = builder_.create<BasicBlock>("if.end");
+        auto* if_then_block = builder_.create<BasicBlock>();
+        auto* if_end_block = builder_.create<BasicBlock>();
 
         set_current_block(if_then_block);
         lower(if_stmt->then_stmt_);
@@ -146,7 +146,7 @@ Value* LoweringEngine::lower(ASTNode* node)
 
         BasicBlock* if_else_block = nullptr;
         if (if_stmt->else_stmt_) {
-            if_else_block = builder_.create<BasicBlock>("if.else");
+            if_else_block = builder_.create<BasicBlock>();
             set_current_block(if_else_block);
             lower(if_stmt->else_stmt_);
             builder_.create<Branch>(if_end_block);
@@ -167,9 +167,9 @@ Value* LoweringEngine::lower(ASTNode* node)
 
     else if (auto* while_stmt = dyn_cast<WhileStmt>(node)) {
         auto* preheader = current_block();
-        auto* cond = builder_.create<BasicBlock>("loop.cond"); // loop header
-        auto* body = builder_.create<BasicBlock>("loop.body");
-        auto* end = builder_.create<BasicBlock>("loop.end");
+        auto* cond = builder_.create<BasicBlock>(); // loop header
+        auto* body = builder_.create<BasicBlock>();
+        auto* end = builder_.create<BasicBlock>();
 
         push_loop_context(preheader, cond, body, end);
 

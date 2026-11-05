@@ -1,8 +1,8 @@
 #include "IR.hpp"
 #include "utils/casting.hpp"
 
-BasicBlock::BasicBlock(std::string_view name) :
-    Value{ValueKind::BasicBlock, nullptr, name} {}
+BasicBlock::BasicBlock() :
+    Value{ValueKind::BasicBlock} {}
 
 BasicBlock::~BasicBlock()
 {
