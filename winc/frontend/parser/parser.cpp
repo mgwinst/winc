@@ -4,6 +4,8 @@
 
 #include "frontend/parser/parser.hpp"
 #include "frontend/ast/ast.hpp"
+#include "utils/macros.hpp"
+#include "frontend/ast/ast.hpp"
 #include "frontend/error/source.hpp"
 #include "frontend/lexer/token.hpp"
 #include "frontend/translation_unit.hpp"
@@ -213,18 +215,6 @@ std::expected<Decl*, Error> Parser::parse_var_decl() noexcept
     if (is_cur_token(TokenType::EQUAL))
     {
         eat_token();
-
-        if (is_cur_token(TokenType::LBRACE))
-        {
-            eat_token();
-
-            auto expr = parse_init_list_expr();
-            if (!expr) return std::unexpected{ expr.error() };
-
-            EXPECT_SEMICOLON();
-
-            return ast_.emplace<VarDecl>(std::string{ *name }, *type, *expr, source);
-        }
 
         auto expr = parse_expr();
         if (!expr) return std::unexpected{ expr.error() };
@@ -667,6 +657,23 @@ std::expected<Expr*, Error> Parser::nud(const Token token) noexcept
             return expr;
         }
 
+        case TokenType::LBRACE: {
+            std::vector<ASTNode*> values;
+
+            while (!is_cur_token(TokenType::RBRACE)) {
+                auto value = parse_expr();
+                if (!value) return std::unexpected{value.error()};
+
+                values.push_back(*value);
+
+                if (is_cur_token(TokenType::COMMA)) eat_token();
+            }
+
+            EXPECT_RBRACE();
+
+            return ast_.emplace<InitListExpr>(std::move(values), Source{prev_token_});
+        }
+
         default:
             return std::unexpected{ SyntaxError{token, "unexpected symbol in expression"} };
     }
@@ -775,26 +782,4 @@ std::expected<Expr*, Error> Parser::parse_expr(int min_prec) noexcept
     }
 
     return left;
-}
-
-// {..., rest are 0's implicitly for both struct and array (where to handle this)}
-std::expected<Expr*, Error> Parser::parse_init_list_expr() noexcept
-{
-    Source source{ prev_token_ };
-
-    std::vector<ASTNode*> init_values;
-
-    while (!is_cur_token(TokenType::RBRACE))
-    {
-        auto expr = parse_expr();
-        if (!expr) return std::unexpected{ expr.error() };
-
-        init_values.push_back(*expr);
-
-        if (is_cur_token(TokenType::COMMA)) eat_token();
-    }
-
-    EXPECT_RBRACE();
-
-    return ast_.emplace<InitListExpr>(std::move(init_values), source);
 }
