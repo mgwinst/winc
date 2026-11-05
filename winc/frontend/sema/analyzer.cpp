@@ -228,9 +228,15 @@ Type* SemanticAnalyzer::check_type(ASTNode* node)
             {
                 if (auto* record_type = dyn_cast<RecordType>(remove_const_qualifier(var->symbol_->type_)))
                 {
-                    if (init_list->init_values_.size() > record_type->fields_.size())
+                    if (init_list->init_values_.size() != record_type->fields_.size())
                     {
-                        register_error(std::format("too many initializers for type '{}'", type_to_str(var->symbol_->type_)), init_list->source_);
+                        register_error(std::format(
+                                "incorrect number of initializers for type '{}': expected {}, got {}",
+                                type_to_str(var->symbol_->type_),
+                                record_type->fields_.size(),
+                                init_list->init_values_.size()),
+                            init_list->source_);
+
                         return nullptr;
                     }
 
@@ -242,9 +248,9 @@ Type* SemanticAnalyzer::check_type(ASTNode* node)
                             if (init_value_type != field.type_)
                             {
                                 register_error(std::format("cannot initialize field '{}' of type '{}' with value of type '{}'",
-                                    field.name_,
-                                    type_to_str(field.type_),
-                                    type_to_str(init_value_type)),
+                                        field.name_,
+                                        type_to_str(field.type_),
+                                        type_to_str(init_value_type)),
                                     init_value->source_);
                             }
                         }
@@ -252,9 +258,14 @@ Type* SemanticAnalyzer::check_type(ASTNode* node)
                 }
                 else if (auto* array_type = dyn_cast<ArrayType>(remove_const_qualifier(var->symbol_->type_)))
                 {
-                    if (init_list->init_values_.size() > array_type->size_)
+                    if (init_list->init_values_.size() != array_type->size_)
                     {
-                        register_error(std::format("too many initializers for type '{}'", type_to_str(var->symbol_->type_)), init_list->source_);
+                        register_error(std::format(
+                                "incorrect number of initializers for type '{}': expected {}, got {}",
+                                type_to_str(var->symbol_->type_),
+                                array_type->size_,
+                                init_list->init_values_.size()),
+                            init_list->source_);
                         return nullptr;
                     }
 
