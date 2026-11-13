@@ -1,3 +1,4 @@
+#include <cassert>
 #include <unordered_map>
 #include <utility>
 
@@ -9,25 +10,22 @@
 #include "utils/enums.hpp"
 #include "utils/fatal.hpp"
 
-bool load_required(ASTNode* node)
+Value* LoweringEngine::materialize(Value* value, ExprUse produced, ExprUse requested)
 {
-    if (isa<ReferenceExpr>(node)) {
-        return true;
+    if (requested == ExprUse::Address) {
+        assert(produced == ExprUse::Address);
+        return value;
     }
 
-    if (auto* unary = dyn_cast<UnaryExpr>(node)) {
-        if (unary->op_ == "*") {
-            return true;
-        }
-    }
+    if (produced == ExprUse::Address)
+        return builder_.create<Load>(value);
 
-    return false;
+    return value;
 }
 
-Value* LoweringEngine::lower(ASTNode* node)
+Value* LoweringEngine::lower(ASTNode* node, ExprUse use)
 {
-    if (auto* translation_unit = dyn_cast<TranslationUnitDecl>(node))
-    {
+    if (auto* translation_unit = dyn_cast<TranslationUnitDecl>(node)) {
         for (auto* decl : translation_unit->decls_) {
             lower(decl);
         }
@@ -39,29 +37,23 @@ Value* LoweringEngine::lower(ASTNode* node)
         auto* alloca = builder_.create<Alloca>(var->symbol_->type_, var->symbol_->identifier_);
         alloca_map_[var->symbol_->identifier_] = alloca;
 
-        if (!var->init_) {
+        if (!var->init_)
             return alloca;
-        } else {
-            auto* init_value = lower(var->init_);
 
-            // no direct store on initializer list expression
-            if (isa<InitListExpr>(var->init_)) {
-                return nullptr;
-            }
-
-            if (load_required(var->init_)) {
-                init_value = builder_.create<Load>(init_value);
-            }
-
-            return builder_.create<Store>(alloca, init_value);
+        // Initializer lists already perform their stores.
+        if (isa<InitListExpr>(var->init_)) {
+            lower(var->init_);
+            return nullptr;
         }
+
+        return builder_.create<Store>(alloca, lower(var->init_));
     }
 
     else if (auto* param = dyn_cast<ParamDecl>(node)) {
         auto* arg = builder_.create<Argument>(param->symbol_->type_, param->symbol_->identifier_);
         auto* alloca = builder_.create<Alloca>(param->symbol_->type_, param->symbol_->identifier_ + ".ptr");
         alloca_map_[param->symbol_->identifier_] = alloca;
-        auto* store = builder_.create<Store>(alloca, arg);
+        builder_.create<Store>(alloca, arg);
 
         return nullptr;
     }
@@ -82,7 +74,7 @@ Value* LoweringEngine::lower(ASTNode* node)
             set_current_block(current_function()->return_block_);
             builder_.create<Return>();
         } else {
-            current_function()->return_value_ = builder_.create<Alloca>(return_type, "retval"); // technically doesn't need to be in alloca map, we can't anyway because of collision (many retvals in the graph)
+            current_function()->return_value_ = builder_.create<Alloca>(return_type, "retval");
             set_current_block(current_function()->return_block_);
             builder_.create<Return>(builder_.create<Load>(return_type, current_function()->return_value_));
         }
@@ -98,7 +90,7 @@ Value* LoweringEngine::lower(ASTNode* node)
         return function;
     }
 
-    else if (auto* record = dyn_cast<RecordDecl>(node)) {
+    else if (isa<RecordDecl>(node)) {
         return nullptr;
     }
 
@@ -113,10 +105,6 @@ Value* LoweringEngine::lower(ASTNode* node)
     else if (auto* return_stmt = dyn_cast<ReturnStmt>(node)) {
         if (return_stmt->value_) {
             auto* value = lower(return_stmt->value_);
-
-            if (load_required(return_stmt->value_))
-                value = builder_.create<Load>(value);
-
             builder_.create<Store>(current_function()->return_value_, value);
         }
 
@@ -125,11 +113,11 @@ Value* LoweringEngine::lower(ASTNode* node)
         return nullptr;
     }
 
-    else if (auto* break_stmt = dyn_cast<BreakStmt>(node)) {
+    else if (isa<BreakStmt>(node)) {
         return builder_.create<Branch>(get_loop_context().end_);
     }
 
-    else if (auto* continue_stmt = dyn_cast<ContinueStmt>(node)) {
+    else if (isa<ContinueStmt>(node)) {
         return builder_.create<Branch>(get_loop_context().header_);
     }
 
@@ -176,7 +164,7 @@ Value* LoweringEngine::lower(ASTNode* node)
         builder_.create<Branch>(cond);
 
         set_current_block(cond);
-        auto* cmp = lower(while_stmt->cond_); // assert(cmp is ...)
+        auto* cmp = lower(while_stmt->cond_);
         builder_.create<Branch>(cmp, body, end);
 
         set_current_block(body);
@@ -191,150 +179,117 @@ Value* LoweringEngine::lower(ASTNode* node)
     }
 
     else if (auto* int_literal = dyn_cast<IntegerLiteralExpr>(node)) {
-        return builder_.create<Const>(int_literal->value_);
+        return materialize(builder_.create<Const>(int_literal->value_), ExprUse::Value, use);
     }
 
     else if (auto* float_literal = dyn_cast<FloatLiteralExpr>(node)) {
-        return builder_.create<Const>(float_literal->value_);
+        return materialize(builder_.create<Const>(float_literal->value_), ExprUse::Value, use);
     }
 
     else if (auto* hex_literal = dyn_cast<HexLiteralExpr>(node)) {
-        return builder_.create<Const>(hex_literal->value_);
+        return materialize(builder_.create<Const>(hex_literal->value_), ExprUse::Value, use);
     }
 
     else if (auto* char_literal = dyn_cast<CharLiteralExpr>(node)) {
-        return builder_.create<Const>(char_literal->value_);
+        return materialize(builder_.create<Const>(char_literal->value_), ExprUse::Value, use);
     }
 
     else if (auto* str_literal = dyn_cast<StringLiteralExpr>(node)) {
-        return builder_.create<Const>(str_literal->value_);
+        return materialize(builder_.create<Const>(str_literal->value_), ExprUse::Value, use);
     }
 
     else if (auto* bool_literal = dyn_cast<BooleanLiteralExpr>(node)) {
-        return bool_literal->value_ ?
-            builder_.create<Const>(static_cast<int64_t>(1)) :
-            builder_.create<Const>(static_cast<int64_t>(0));
+        auto* result = builder_.create<Const>(static_cast<int64_t>(bool_literal->value_));
+        return materialize(result, ExprUse::Value, use);
     }
 
     else if (auto* unary = dyn_cast<UnaryExpr>(node)) {
-        auto* operand = lower(unary->operand_);
-
-        if (unary->op_ == "!") {
-            if (load_required(unary->operand_))
-                operand = builder_.create<Load>(operand);
-            return builder_.create<Not>(operand);
+        if (unary->op_ == "&") {
+            auto* ptr = lower(unary->operand_, ExprUse::Address);
+            return materialize(ptr, ExprUse::Value, use);
         }
 
-        // address of
-        if (unary->op_ == "&")
-            return operand;
+        if (unary->op_ == "*") {
+            auto* ptr = lower(unary->operand_);
+            return materialize(ptr, ExprUse::Address, use);
+        }
 
-        // pointer dereference
-        if (unary->op_ == "*")
-            return builder_.create<Load>(operand);
+        if (unary->op_ == "!") {
+            auto* operand = lower(unary->operand_);
+            return materialize(builder_.create<Not>(operand), ExprUse::Value, use);
+        }
 
-        return nullptr;
+        fatal_error("unsupported unary op");
     }
 
     else if (auto* binary = dyn_cast<BinaryExpr>(node)) {
         const BinaryOp op = binary_ops[binary->op_];
         assert(op != BinaryOp::Invalid);
 
+        if (op == BinaryOp::Assign) {
+            auto* dst = lower(binary->left_, ExprUse::Address);
+            auto* src = lower(binary->right_);
+            builder_.create<Store>(dst, src);
+            return materialize(src, ExprUse::Value, use);
+        }
+
         auto* left = lower(binary->left_);
         auto* right = lower(binary->right_);
-
-        if (op == BinaryOp::Assign) {
-            if (load_required(binary->right_)) {
-                right = builder_.create<Load>(right);
-            }
-
-            return builder_.create<Store>(left, right);
-        }
-
-        if (load_required(binary->left_))
-            left = builder_.create<Load>(left);
-
-        if (load_required(binary->right_))
-            right = builder_.create<Load>(right);
+        Value* result = nullptr;
 
         switch (op) {
-            case BinaryOp::Add:
-                return builder_.create<Add>(left, right);
+            case BinaryOp::Add: result = builder_.create<Add>(left, right); break;
+            case BinaryOp::Sub: result = builder_.create<Sub>(left, right); break;
+            case BinaryOp::Mul: result = builder_.create<Mul>(left, right); break;
+            case BinaryOp::Div: result = builder_.create<Div>(left, right); break;
+            case BinaryOp::Mod: result = builder_.create<Mod>(left, right); break;
+            case BinaryOp::Eq:  result = builder_.create<Eq>(left, right);  break;
+            case BinaryOp::Ne:  result = builder_.create<Ne>(left, right);  break;
 
-            case BinaryOp::Sub:
-                return builder_.create<Sub>(left, right);
-
-            case BinaryOp::Mul:
-                return builder_.create<Mul>(left, right);
-
-            case BinaryOp::Div:
-                return builder_.create<Div>(left, right);
-
-            case BinaryOp::Mod:
-                return builder_.create<Mod>(left, right);
-
-            case BinaryOp::Eq:
-                return builder_.create<Eq>(left, right);
-
-            case BinaryOp::Ne:
-                return builder_.create<Ne>(left, right);
-
-            case BinaryOp::lt: {
+            case BinaryOp::lt:
                 if (is_unsigned(left->type_))
-                    return builder_.create<Ult>(left, right);
+                    result = builder_.create<Ult>(left, right);
                 else
-                    return builder_.create<Slt>(left, right);
-            }
+                    result = builder_.create<Slt>(left, right);
+                break;
 
-            case BinaryOp::le: {
+            case BinaryOp::le:
                 if (is_unsigned(left->type_))
-                    return builder_.create<Ule>(left, right);
+                    result = builder_.create<Ule>(left, right);
                 else
-                    return builder_.create<Sle>(left, right);
-            }
+                    result = builder_.create<Sle>(left, right);
+                break;
 
-            case BinaryOp::Shl:
-                return builder_.create<Shl>(left, right);
+            case BinaryOp::Shl: result = builder_.create<Shl>(left, right); break;
 
-            case BinaryOp::Shr: {
+            case BinaryOp::Shr:
                 if (is_unsigned(left->type_))
-                    return builder_.create<Lshr>(left, right);
+                    result = builder_.create<Lshr>(left, right);
                 else
-                    return builder_.create<Ashr>(left, right);
-            }
+                    result = builder_.create<Ashr>(left, right);
+                break;
 
-            case BinaryOp::Xor:
-                return builder_.create<Xor>(left, right);
-
-            case BinaryOp::Or:
-                return builder_.create<Or>(left, right);
-
-            case BinaryOp::And:
-                return builder_.create<And>(left, right);
-
-            default:
-                fatal_error("lowering binary op error");
+            case BinaryOp::Xor: result = builder_.create<Xor>(left, right); break;
+            case BinaryOp::Or:  result = builder_.create<Or>(left, right);  break;
+            case BinaryOp::And: result = builder_.create<And>(left, right); break;
+            default: fatal_error("lowering binary op error");
         }
+
+        return materialize(result, ExprUse::Value, use);
     }
 
     else if (auto* ref = dyn_cast<ReferenceExpr>(node)) {
-        return get_value(ref);
+        return materialize(get_value(ref), ExprUse::Address, use);
     }
 
     else if (auto* call = dyn_cast<CallExpr>(node)) {
         auto* callee = function_map_[cast<ReferenceExpr>(call->callee_)->name_];
 
         std::vector<Value*> args;
-        for (auto* arg : call->args_) {
-            auto* a = lower(arg);
+        for (auto* arg : call->args_)
+            args.push_back(lower(arg));
 
-            if (load_required(arg))
-                a = builder_.create<Load>(a);
-
-            args.push_back(a);
-        }
-
-        return builder_.create<Call>(callee, std::move(args));
+        return materialize(builder_.create<Call>(callee, std::move(args)), ExprUse::Value, use);
     }
 
     else if (auto* expr = dyn_cast<MemberExpr>(node)) {
@@ -351,28 +306,24 @@ Value* LoweringEngine::lower(ASTNode* node)
         auto field_index = record_type->field_position(expr->member_);
         auto* index = builder_.create<Const>(static_cast<int64_t>(field_index));
 
-        auto* base_ptr = get_value(base);
-        if (isa<PointerType>(base->symbol_->type_)) {
-            base_ptr = builder_.create<Load>(base_ptr);
-        }
+        auto* base_ptr = lower(
+            expr->base_,
+            expr->is_arrow_ ? ExprUse::Value : ExprUse::Address
+        );
 
-        return builder_.create<PtrAdd>(base_ptr, index);
+        return materialize(builder_.create<PtrAdd>(base_ptr, index), ExprUse::Address, use);
     }
 
     else if (auto* expr = dyn_cast<ArraySubscriptExpr>(node)) {
         auto* base = cast<ReferenceExpr>(expr->base_);
 
-        auto* base_ptr = get_value(base);
-        if (isa<PointerType>(base->symbol_->type_)) {
-            base_ptr = builder_.create<Load>(base_ptr);
-        }
-
+        auto* base_ptr = lower(
+            expr->base_,
+            isa<PointerType>(base->symbol_->type_) ? ExprUse::Value : ExprUse::Address
+        );
         auto* index = lower(expr->index_);
-        if (load_required(expr->index_)) {
-            index = builder_.create<Load>(index);
-        }
 
-        return builder_.create<PtrAdd>(base_ptr, index);
+        return materialize(builder_.create<PtrAdd>(base_ptr, index), ExprUse::Address, use);
     }
 
     else if (auto* init_list_expr = dyn_cast<InitListExpr>(node)) {
@@ -383,10 +334,6 @@ Value* LoweringEngine::lower(ASTNode* node)
             auto* ptr = builder_.create<PtrAdd>(base_ptr, index);
 
             auto* init_value = lower(init_list_expr->init_values_[i]);
-            if (load_required(init_list_expr->init_values_[i])) {
-                init_value = builder_.create<Load>(init_value);
-            }
-
             builder_.create<Store>(ptr, init_value);
         }
 
@@ -436,9 +383,8 @@ Value* LoweringEngine::get_value(ReferenceExpr* ref)
     if (auto it = alloca_map_.find(ref->symbol_->identifier_); it != alloca_map_.end())
         return it->second;
 
+    fatal_error("variable not found during lowering");
     return nullptr;
-
-    // assert() instead?
 }
 
 void LoweringEngine::push_loop_context(BasicBlock* preheader, BasicBlock* header, BasicBlock* body, BasicBlock* end)

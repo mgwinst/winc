@@ -658,6 +658,8 @@ std::expected<Expr*, Error> Parser::nud(const Token token) noexcept
         }
 
         case TokenType::LBRACE: {
+            auto source = Source{prev_token_};
+
             std::vector<ASTNode*> values;
 
             while (!is_cur_token(TokenType::RBRACE)) {
@@ -671,7 +673,7 @@ std::expected<Expr*, Error> Parser::nud(const Token token) noexcept
 
             EXPECT_RBRACE();
 
-            return ast_.emplace<InitListExpr>(std::move(values), Source{prev_token_});
+            return ast_.emplace<InitListExpr>(std::move(values), source);
         }
 
         default:

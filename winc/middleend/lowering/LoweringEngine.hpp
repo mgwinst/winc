@@ -9,6 +9,12 @@ struct LoopContext
     BasicBlock *preheader_, *header_, *body_, *end_;
 };
 
+enum class ExprUse
+{
+    Value,
+    Address
+};
+
 class LoweringEngine
 {
 public:
@@ -34,7 +40,8 @@ private:
     std::unordered_map<std::string, Function*> function_map_;
     std::stack<LoopContext> loop_context_stack_;
 
-    Value* lower(ASTNode* node);
+    Value* lower(ASTNode* node, ExprUse use = ExprUse::Value);
+    Value* materialize(Value* value, ExprUse produced, ExprUse requested);
 
     Function* current_function() const;
     BasicBlock* current_block() const;
